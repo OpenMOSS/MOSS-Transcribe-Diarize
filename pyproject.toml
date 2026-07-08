@@ -13,7 +13,7 @@ authors = [{ name = "OpenMOSS Team" }]
 dependencies = [
   "transformers>=5.0.0,<6.0.0",
   "safetensors>=0.6.2",
-  "numpy>=1.26,<2",
+  "numpy>=1.26,<3",
   "av>=14.0",
   "librosa>=0.11.0",
   "soundfile>=0.12",

@@ -14,11 +14,11 @@
   <a href="https://x.com/MosiAI_Official"><img src="https://img.shields.io/badge/Twitter-Follow-black?logo=x&amp"></a>
 </div>
 
-MOSS-Transcribe-Diarize is a SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness.
+MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness. MOSS-Transcribe-Diarize Pro is a stronger model with higher overall performance and will be available through API access soon.
 
 ## News
 
-* 2026-07-09: Released MOSS-Transcribe-Diarize 0.9B.
+* 2026-07-09: Open-sourced MOSS-Transcribe-Diarize 0.9B.
 
 ## Contents
 
@@ -37,7 +37,7 @@ MOSS-Transcribe-Diarize is a SOTA end-to-end audio understanding model for long-
 
 ## Introduction
 
-MOSS-Transcribe-Diarize is our flagship SOTA model for turning real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, the model jointly performs speech transcription and speaker diarization, producing time-aligned text with precise timestamps and consistent speaker labels such as `[S01]`, `[S02]`, and beyond.
+MOSS-Transcribe-Diarize is our flagship SOTA model family for turning real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, these models jointly perform speech transcription and speaker diarization, producing time-aligned text with precise timestamps and consistent speaker labels such as `[S01]`, `[S02]`, and beyond.
 
 Built for meetings, calls, podcasts, interviews, lectures, and video content, MOSS-Transcribe-Diarize is designed to handle long, messy, multi-speaker recordings where reliability matters. It can also emit optional acoustic event annotations, giving downstream systems a richer understanding of what happened, who spoke, and when.
 
@@ -68,7 +68,7 @@ Timestamps are expressed in seconds, and adjacent segments are concatenated into
 
 ### Objective Evaluation
 
-We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Δcp. Lower is better for all metrics. A dash (`-`) indicates that the result is unavailable.
+We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Δcp. Lower is better for all metrics. Best results are bolded, second-best results are underlined. A dash (`-`) indicates that the result is unavailable.
 
 <div style="overflow-x: auto;">
 <table style="white-space: nowrap;">
@@ -121,7 +121,7 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
       <td>22.75</td><td>27.43</td><td>4.68</td>
       <td>26.75</td><td>32.84</td><td>6.09</td>
       <td>-</td><td>-</td><td>-</td>
-      <td>8.62</td><td>14.73</td><td>6.11</td>
+      <td>8.62</td><td>14.73</td><td><u>6.11</u></td>
     </tr>
     <tr>
       <td style="white-space: nowrap;">VIBEVOICE ASR</td>
@@ -132,16 +132,16 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
     </tr>
     <tr>
       <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize</b></td>
-      <td>14.84</td><td>15.83</td><td>0.99</td>
-      <td>24.86</td><td>22.17</td><td>-2.69</td>
-      <td>5.97</td><td>7.37</td><td><b>1.40</b></td>
-      <td>6.36</td><td>12.76</td><td>6.40</td>
+      <td><u>14.84</u></td><td><u>15.83</u></td><td><u>0.99</u></td>
+      <td><u>24.86</u></td><td><u>22.17</u></td><td><u>-2.69</u></td>
+      <td><u>5.97</u></td><td><u>7.37</u></td><td><b>1.40</b></td>
+      <td><u>6.36</u></td><td><u>12.76</u></td><td>6.40</td>
     </tr>
     <tr>
       <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize Pro</b></td>
       <td><b>13.78</b></td><td><b>14.02</b></td><td><b>0.24</b></td>
       <td><b>18.22</b></td><td><b>13.94</b></td><td><b>-4.27</b></td>
-      <td><b>4.46</b></td><td><b>6.97</b></td><td>2.51</td>
+      <td><b>4.46</b></td><td><b>6.97</b></td><td><u>2.51</u></td>
       <td><b>5.86</b></td><td><b>11.78</b></td><td><b>5.92</b></td>
     </tr>
   </tbody>
@@ -159,8 +159,7 @@ git clone https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
 cd MOSS-Transcribe-Diarize
 uv venv --python 3.12 .venv
 source .venv/bin/activate
-uv pip install -e .
-uv pip install torch torchaudio
+uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ```
 
 ### Python Usage
@@ -231,10 +230,20 @@ More prompt recipes are available in [examples/prompts.md](examples/prompts.md).
 
 ### Serve with vLLM and SGLang
 
-MOSS-Transcribe-Diarize supports vLLM serving through the OpenAI-compatible transcription API:
+MOSS-Transcribe-Diarize supports vLLM serving through the OpenAI-compatible transcription API. Use a pinned vLLM nightly build that includes the MOSS-Transcribe-Diarize model registration. Choose one of the following commands: for CUDA 12 environments, use `cu129`; for CUDA 13 environments, use `cu130`.
 
 ```bash
-uv pip install vllm
+uv pip install -U vllm \
+  --torch-backend=auto \
+  --extra-index-url https://wheels.vllm.ai/68b4a1d582818e67adc903bf1b8fc5a5447da2fa/cu129
+```
+
+or:
+
+```bash
+uv pip install -U vllm \
+  --torch-backend=auto \
+  --extra-index-url https://wheels.vllm.ai/68b4a1d582818e67adc903bf1b8fc5a5447da2fa/cu130
 ```
 
 ```bash
