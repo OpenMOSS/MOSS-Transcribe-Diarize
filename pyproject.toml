@@ -16,6 +16,7 @@ dependencies = [
   "numpy>=1.26,<3",
   "av>=14.0",
   "librosa>=0.11.0",
+  "numba>=0.61.0",
   "soundfile>=0.12",
   "soxr>=0.5",
   "packaging",

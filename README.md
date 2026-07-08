@@ -55,6 +55,10 @@ Timestamps are expressed in seconds, and adjacent segments are concatenated into
 
 ## Model Architecture
 
+<p align="center">
+  <img src="./assets/Model_Architecture.png" alt="MOSS-Transcribe-Diarize model architecture" width="90%" />
+</p>
+
 | Component | Specification |
 |---|---|
 | Text backbone | Qwen3-0.6B style causal decoder |
