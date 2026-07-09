@@ -9,54 +9,53 @@
 </p>
 
 <div align="center">
+  <a href="https://github.com/OpenMOSS/MOSS-Transcribe-Diarize"><img src="https://img.shields.io/badge/GitHub-OpenMOSS%2FMOSS--Transcribe--Diarize-black?logo=github"></a>
   <a href="https://huggingface.co/OpenMOSS-Team/MOSS-Transcribe-Diarize"><img src="https://img.shields.io/badge/HuggingFace-Model-orange?logo=huggingface"></a>
   <a href="https://arxiv.org/abs/2601.01554"><img src="https://img.shields.io/badge/arXiv-2601.01554-b31b1b?logo=arxiv"></a>
   <a href="https://x.com/MosiAI_Official"><img src="https://img.shields.io/badge/Twitter-Follow-black?logo=x&amp"></a>
 </div>
 
-MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness. MOSS-Transcribe-Diarize Pro is a stronger model with higher overall performance and will be available through API access soon.
+MOSS-Transcribe-Diarize 0.9B is an end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness.
+
+Given an audio or video file, the model generates a compact speaker-aware transcript in one pass, including timestamps and anonymous speaker labels such as `[S01]`, `[S02]`, and beyond.
 
 ## News
 
-* 2026-07-09: Open-sourced MOSS-Transcribe-Diarize 0.9B.
+* 2026-07-09: Released MOSS-Transcribe-Diarize 0.9B.
 
 ## Contents
 
 - [Introduction](#introduction)
 - [Model Architecture](#model-architecture)
 - [Evaluation](#evaluation)
-  - [Objective Evaluation](#objective-evaluation)
 - [Quickstart](#quickstart)
-  - [Environment Setup](#environment-setup)
+  - [Serve with SGLang Omni](#serve-with-sglang-omni)
+  - [Serving with Native Hugging Face Transformers](#serving-with-native-hugging-face-transformers)
   - [Python Usage](#python-usage)
   - [Custom Prompt and Hotwords](#custom-prompt-and-hotwords)
-  - [Serve with vLLM and SGLang](#serve-with-vllm-and-sglang)
+  - [Serve with vLLM](#serve-with-vllm)
   - [Subtitle Web App](#subtitle-web-app)
+- [Output Format](#output-format)
+- [More Information](#more-information)
+- [License](#license)
 - [Citation](#citation)
-- [Star History](#star-history)
 
 ## Introduction
 
-MOSS-Transcribe-Diarize is our flagship SOTA model family for turning real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, these models jointly perform speech transcription and speaker diarization, producing time-aligned text with precise timestamps and consistent speaker labels such as `[S01]`, `[S02]`, and beyond.
+MOSS-Transcribe-Diarize 0.9B turns real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, it jointly performs speech transcription and speaker diarization, producing time-aligned text with consistent speaker labels.
 
-Built for meetings, calls, podcasts, interviews, lectures, and video content, MOSS-Transcribe-Diarize is designed to handle long, messy, multi-speaker recordings where reliability matters. It can also emit optional acoustic event annotations, giving downstream systems a richer understanding of what happened, who spoke, and when.
+The model is built for meetings, calls, podcasts, interviews, lectures, videos, and other long or messy multi-speaker recordings. It can also emit acoustic event annotations, giving downstream systems a richer view of what happened, who spoke, and when.
 
-The model accepts raw audio and emits a compact timestamped transcript. The canonical output format is:
+Core capabilities:
 
-```text
-[start_time][Sxx]transcribed speech[end_time]
-```
-
-Timestamps are expressed in seconds, and adjacent segments are concatenated into a single stream, for example:
-
-```text
-[0.48][S01]Welcome everyone[1.66][12.26][S02]The new transcription pipeline is ready for evaluation[13.81][14.36][S01]Great, include the diarization results in the report[18.76]
-```
+* **Long-form transcription**: Converts long audio or video recordings into timestamped text.
+* **Speaker-aware diarization**: Assigns anonymous speaker labels such as `[S01]` and `[S02]` without a separate diarization pipeline.
+* **Promptable generation**: Supports custom transcription instructions, hotwords, and acoustic event annotations.
 
 ## Model Architecture
 
 <p align="center">
-  <img src="./assets/Model_Architecture.png" alt="MOSS-Transcribe-Diarize model architecture" width="90%" />
+  <img src="./assets/Model_Architecture.png" alt="MOSS-Transcribe-Diarize 0.9B model architecture" width="90%" />
 </p>
 
 | Component | Specification |
@@ -68,11 +67,11 @@ Timestamps are expressed in seconds, and adjacent segments are concatenated into
 | Fusion | Audio features replace <code>&lt;&#124;audio_pad&#124;&gt;</code> embeddings via `masked_scatter` |
 | Output format | Compact `[start][Sxx]text[end]` transcript with speaker tags such as `[S01]` |
 
+This repository includes the custom Transformers code required to load the model with `trust_remote_code=True`.
+
 ## Evaluation
 
-### Objective Evaluation
-
-We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Δcp. Lower is better for all metrics. Best results are bolded, second-best results are underlined. A dash (`-`) indicates that the result is unavailable.
+We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Delta-cp. Lower is better for all metrics. Best results are bolded, second-best results are underlined. A dash (`-`) indicates that the result is unavailable.
 
 <div style="overflow-x: auto;">
 <table style="white-space: nowrap;">
@@ -135,7 +134,7 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
       <td>14.59</td><td>42.54</td><td>27.94</td>
     </tr>
     <tr>
-      <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize</b></td>
+      <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize 0.9B</b></td>
       <td><u>14.84</u></td><td><u>15.83</u></td><td><u>0.99</u></td>
       <td><u>24.86</u></td><td><u>22.17</u></td><td><u>-2.69</u></td>
       <td><u>5.97</u></td><td><u>7.37</u></td><td><b>1.40</b></td>
@@ -154,17 +153,113 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
 
 ## Quickstart
 
-### Environment Setup
+### Serve with SGLang Omni
 
-Use a clean Python environment. The project is tested with Python 3.12 and Transformers 5.x.
+The recommended way to serve MOSS-Transcribe-Diarize is [SGLang Omni](https://github.com/sgl-project/sglang-omni) through the OpenAI-compatible `/v1/audio/transcriptions` endpoint. Install `sglang-omni` by following the [installation guide](https://github.com/sgl-project/sglang-omni/blob/main/docs/get_started/installation.md), then download the model:
 
 ```bash
+hf download OpenMOSS-Team/MOSS-Transcribe-Diarize
+```
+
+Serve the model:
+
+```bash
+sgl-omni serve \
+  --model-path OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --port 8000 \
+  --max-running-requests 16 \
+  --cuda-graph-max-bs 16 \
+  --mem-fraction-static 0.80
+```
+
+Use `response_format=verbose_json` when you need parsed speaker segments. `json` returns the raw transcript text only.
+
+```bash
+curl -X POST http://localhost:8000/v1/audio/transcriptions \
+  -F model=OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  -F file=@audio.wav \
+  -F response_format=verbose_json
+```
+
+```python
+import requests
+
+with open("audio.wav", "rb") as f:
+    resp = requests.post(
+        "http://localhost:8000/v1/audio/transcriptions",
+        data={
+            "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+            "response_format": "verbose_json",
+        },
+        files={"file": ("audio.wav", f, "audio/wav")},
+        timeout=300,
+    )
+
+resp.raise_for_status()
+payload = resp.json()
+print(payload["text"])
+for segment in payload.get("segments", []):
+    print(f"[{segment['start']:.2f}-{segment['end']:.2f}] {segment['text']}")
+```
+
+For longer multi-speaker audio, raise `max_new_tokens` so the decoder can finish the full diarized transcript:
+
+```bash
+curl -X POST http://localhost:8000/v1/audio/transcriptions \
+  -F model=OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  -F file=@audio.wav \
+  -F response_format=verbose_json \
+  -F max_new_tokens=65536
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `file` | file | required | Audio file uploaded as multipart form data |
+| `model` | string | server default | Model identifier |
+| `language` | string | unset | Optional language hint |
+| `response_format` | string | `json` | `json`, `verbose_json`, or `text` |
+| `temperature` | float | model default (`0.0`) | Sampling temperature |
+| `max_new_tokens` | int | `5120` | Max generated tokens; raise for long audio, for example `65536` |
+| `prompt` | string | unset | Optional instruction override; omit to use the built-in transcribe+diarize prompt |
+
+For benchmarking, performance numbers, and implementation details, see the [SGLang Omni cookbook](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_transcribe_diarize.md). The following single-H100 results are reported for short- and long-sequence multi-speaker ASR tasks.
+
+`movies800times` short-sequence ASR:
+
+| Concurrency | Throughput (req/s) | Mean latency (s) | RTF mean | audio_s/s |
+|---:|---:|---:|---:|---:|
+| 1 | 2.57 | 0.388 | 0.0612 | 29.76 |
+| 2 | 4.89 | 0.409 | 0.0659 | 56.55 |
+| 4 | 6.62 | 0.513 | 0.0790 | 76.64 |
+| 8 | 6.80 | 0.533 | 0.0810 | 78.70 |
+| 16 | 7.08 | 0.659 | 0.0922 | 81.98 |
+
+`aishell4_long` long-sequence ASR:
+
+| Concurrency | Throughput (req/s) | Mean latency (s) | RTF mean | audio_s/s |
+|---:|---:|---:|---:|---:|
+| 1 | 0.022 | 45.2 | 0.0197 | 50.64 |
+| 2 | 0.032 | 60.7 | 0.0265 | 74.25 |
+| 4 | 0.036 | 105.6 | 0.0461 | 81.64 |
+| 8 | 0.040 | 172.6 | 0.0754 | 90.62 |
+| 16 | 0.043 | 282.8 | 0.1237 | 98.83 |
+
+### Serving with Native Hugging Face Transformers
+
+Use a clean Python environment. The model uses custom Transformers code, so load the model and processor with `trust_remote_code=True`.
+
+```bash
+conda create -n moss-transcribe-diarize python=3.12 -y
+conda activate moss-transcribe-diarize
+
 git clone https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
 cd MOSS-Transcribe-Diarize
-uv venv --python 3.12 .venv
-source .venv/bin/activate
-uv pip install -e ".[torch-runtime]" --torch-backend=auto
+
+pip install --index-url https://download.pytorch.org/whl/cu128 torch torchaudio
+pip install -e .
 ```
+
+The GitHub package provides helper utilities such as audio/video loading, transcription message construction, transcript parsing, CLI inference, and the subtitle web app. The model weights and remote-code model files are loaded from the Hugging Face repository.
 
 ### Python Usage
 
@@ -190,7 +285,11 @@ model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True,
     dtype="auto",
 ).to(dtype=dtype).to(device).eval()
-processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+
+processor = AutoProcessor.from_pretrained(
+    model_id,
+    trust_remote_code=True,
+)
 
 messages = build_transcription_messages(audio_path)
 result = generate_transcription(
@@ -209,10 +308,10 @@ for segment in parse_transcript(result["text"]):
     print(segment.start, segment.end, segment.speaker, segment.text)
 ```
 
-The message flow follows the common Qwen multimodal pattern. The chat template is loaded from the model by `AutoProcessor`:
+The message flow follows the common Qwen multimodal pattern:
 
 1. `processor.apply_chat_template(messages, tokenize=False)` renders text with audio placeholders.
-2. `process_audio_info(messages, sampling_rate)` loads audio waveforms from the same messages.
+2. The helper utilities load audio waveforms from the same messages.
 3. `processor(text=text, audio=audios)` computes Whisper input features and expands audio placeholders.
 4. `model.generate(...)` produces timestamped transcription and diarization text.
 
@@ -230,11 +329,11 @@ To add hotwords, append a short hint to the default prompt:
 请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。热词提示：热词1, 热词2, 热词3
 ```
 
-More prompt recipes are available in [examples/prompts.md](examples/prompts.md). The same prompt can be passed to `build_transcription_messages`, `mtd-subtitle`, and `mtd-subtitle-web`.
+More prompt recipes are available in [examples/prompts.md](examples/prompts.md).
 
-### Serve with vLLM and SGLang
+### Serve with vLLM
 
-MOSS-Transcribe-Diarize supports vLLM serving through the OpenAI-compatible transcription API. Use a pinned vLLM nightly build that includes the MOSS-Transcribe-Diarize model registration. Choose one of the following commands: for CUDA 12 environments, use `cu129`; for CUDA 13 environments, use `cu130`.
+MOSS-Transcribe-Diarize also supports vLLM serving through the OpenAI-compatible transcription API. Use a pinned vLLM nightly build that includes the MOSS-Transcribe-Diarize model registration. Choose one of the following commands: for CUDA 12 environments, use `cu129`; for CUDA 13 environments, use `cu130`.
 
 ```bash
 uv pip install -U vllm \
@@ -262,28 +361,11 @@ curl http://localhost:8000/v1/audio/transcriptions \
   -F temperature="0"
 ```
 
-The same request format can be used with an SGLang OpenAI-compatible server:
-
-```bash
-python -m sglang.launch_server \
-  --model-path OpenMOSS-Team/MOSS-Transcribe-Diarize \
-  --served-model-name OpenMOSS-Team/MOSS-Transcribe-Diarize \
-  --trust-remote-code \
-  --host 0.0.0.0 \
-  --port 30000
-```
-
-```bash
-curl http://localhost:30000/v1/audio/transcriptions \
-  -F model="OpenMOSS-Team/MOSS-Transcribe-Diarize" \
-  -F file=@"audio.wav" \
-  -F response_format="json" \
-  -F temperature="0"
-```
+The local subtitle CLI and web app can also use a remote vLLM server through `--backend vllm --vllm-base-url http://127.0.0.1:8000/v1`.
 
 ### Subtitle Web App
 
-The package also includes a local subtitle workflow for upload, review, subtitle export, and optional FFmpeg burn-in:
+The source package includes a local subtitle workflow for upload, review, subtitle export, and optional FFmpeg burn-in:
 
 ```bash
 mtd-subtitle-web \
@@ -303,9 +385,39 @@ mtd-subtitle /path/to/input.mp4 \
   --render
 ```
 
+## Output Format
+
+The canonical output format is:
+
+```text
+[start_time][Sxx]transcribed speech[end_time]
+```
+
+Example:
+
+```text
+[0.48][S01]Welcome everyone[1.66][12.26][S02]The new transcription pipeline is ready for evaluation[13.81][14.36][S01]Great, include the diarization results in the report[18.76]
+```
+
+In this format:
+
+* `start_time` and `end_time` are timestamps in seconds.
+* `[S01]`, `[S02]`, and similar labels are anonymous model-generated speaker labels.
+* Speaker labels are relative labels within the input audio and should not be interpreted as real speaker identities.
+
+## More Information
+
+* **GitHub**: <https://github.com/OpenMOSS/MOSS-Transcribe-Diarize>
+* **MOSI.AI**: <https://mosi.cn>
+* **OpenMOSS**: <https://www.open-moss.com>
+
+## License
+
+MOSS-Transcribe-Diarize 0.9B is licensed under the Apache License 2.0.
+
 ## Citation
 
-If you use MOSS-Transcribe-Diarize, please cite the technical report:
+If you use MOSS-Transcribe-Diarize 0.9B, please cite the technical report:
 
 ```bibtex
 @misc{moss_transcribe_diarize_2026,
@@ -318,11 +430,3 @@ If you use MOSS-Transcribe-Diarize, please cite the technical report:
   url={https://arxiv.org/abs/2601.01554}
 }
 ```
-
-## Star History
-
-<p align="center">
-  <a href="https://www.star-history.com/#OpenMOSS/MOSS-Transcribe-Diarize&amp;Date">
-    <img width="700" alt="Star History Chart" src="https://api.star-history.com/svg?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&amp;type=Date">
-  </a>
-</p>
