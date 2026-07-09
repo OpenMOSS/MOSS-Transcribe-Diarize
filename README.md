@@ -74,7 +74,7 @@ This repository includes the custom Transformers code required to load the model
 
 ## Evaluation
 
-We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Delta-cp. Lower is better for all metrics. Best results are bolded, second-best results are underlined. A dash (`-`) indicates that the result is unavailable.
+We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Δcp. Lower is better for all metrics. Best results are bolded, second-best results are underlined. A dash (`-`) indicates that the result is unavailable.
 
 <div style="overflow-x: auto;">
 <table style="white-space: nowrap;">
@@ -432,3 +432,11 @@ If you use MOSS-Transcribe-Diarize 0.9B, please cite the technical report:
   url={https://arxiv.org/abs/2601.01554}
 }
 ```
+
+## Star History
+
+<p align="center">
+  <a href="https://www.star-history.com/#OpenMOSS/MOSS-Transcribe-Diarize&amp;Date">
+    <img width="700" alt="Star History Chart" src="https://api.star-history.com/svg?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&amp;type=Date">
+  </a>
+</p>
