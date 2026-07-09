@@ -33,7 +33,6 @@ MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understandi
   - [Serve with vLLM](#serve-with-vllm)
   - [Subtitle Web App](#subtitle-web-app)
 - [Output Format](#output-format)
-- [More Information](#more-information)
 - [License](#license)
 - [Citation](#citation)
 - [Star History](#star-history)
@@ -408,11 +407,6 @@ In this format:
 * `start_time` and `end_time` are timestamps in seconds.
 * `[S01]`, `[S02]`, and similar labels are anonymous model-generated speaker labels.
 * Speaker labels are relative labels within the input audio and should not be interpreted as real speaker identities.
-
-## More Information
-
-* **MOSI.AI**: <https://mosi.cn>
-* **OpenMOSS**: <https://openmoss.ai/>
 
 ## License
 
