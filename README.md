@@ -41,15 +41,21 @@ Given an audio or video file, the model generates a compact speaker-aware transc
 
 ## Introduction
 
-MOSS-Transcribe-Diarize 0.9B turns real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, it jointly performs speech transcription and speaker diarization, producing time-aligned text with consistent speaker labels.
+MOSS-Transcribe-Diarize is our flagship SOTA model family for turning real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, these models jointly perform speech transcription and speaker diarization, producing time-aligned text with precise timestamps and consistent speaker labels such as `[S01]`, `[S02]`, and beyond.
 
-The model is built for meetings, calls, podcasts, interviews, lectures, videos, and other long or messy multi-speaker recordings. It can also emit acoustic event annotations, giving downstream systems a richer view of what happened, who spoke, and when.
+Built for meetings, calls, podcasts, interviews, lectures, and video content, MOSS-Transcribe-Diarize is designed to handle long, messy, multi-speaker recordings where reliability matters. It can also emit optional acoustic event annotations, giving downstream systems a richer understanding of what happened, who spoke, and when.
 
-Core capabilities:
+The model accepts raw audio and emits a compact timestamped transcript. The canonical output format is:
 
-* **Long-form transcription**: Converts long audio or video recordings into timestamped text.
-* **Speaker-aware diarization**: Assigns anonymous speaker labels such as `[S01]` and `[S02]` without a separate diarization pipeline.
-* **Promptable generation**: Supports custom transcription instructions, hotwords, and acoustic event annotations.
+```text
+[start_time][Sxx]transcribed speech[end_time]
+```
+
+Timestamps are expressed in seconds, and adjacent segments are concatenated into a single stream, for example:
+
+```text
+[0.48][S01]Welcome everyone[1.66][12.26][S02]The new transcription pipeline is ready for evaluation[13.81][14.36][S01]Great, include the diarization results in the report[18.76]
+```
 
 ## Model Architecture
 
