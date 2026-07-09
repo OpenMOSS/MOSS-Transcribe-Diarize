@@ -36,6 +36,7 @@ MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understandi
 - [More Information](#more-information)
 - [License](#license)
 - [Citation](#citation)
+- [Star History](#star-history)
 
 ## Introduction
 
