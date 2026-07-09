@@ -9,7 +9,6 @@
 </p>
 
 <div align="center">
-  <a href="https://github.com/OpenMOSS/MOSS-Transcribe-Diarize"><img src="https://img.shields.io/badge/GitHub-OpenMOSS%2FMOSS--Transcribe--Diarize-black?logo=github"></a>
   <a href="https://huggingface.co/OpenMOSS-Team/MOSS-Transcribe-Diarize"><img src="https://img.shields.io/badge/HuggingFace-Model-orange?logo=huggingface"></a>
   <a href="https://arxiv.org/abs/2601.01554"><img src="https://img.shields.io/badge/arXiv-2601.01554-b31b1b?logo=arxiv"></a>
   <a href="https://x.com/MosiAI_Official"><img src="https://img.shields.io/badge/Twitter-Follow-black?logo=x&amp"></a>
