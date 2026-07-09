@@ -126,7 +126,7 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
       <td>22.75</td><td>27.43</td><td>4.68</td>
       <td>26.75</td><td>32.84</td><td>6.09</td>
       <td>-</td><td>-</td><td>-</td>
-      <td>8.62</td><td>14.73</td><td><u>6.11</u></td>
+      <td>8.62</td><td>14.73</td><td><ins>6.11</ins></td>
     </tr>
     <tr>
       <td style="white-space: nowrap;">VIBEVOICE ASR</td>
@@ -136,17 +136,17 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
       <td>14.59</td><td>42.54</td><td>27.94</td>
     </tr>
     <tr>
-      <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize</b></td>
-      <td><u>14.84</u></td><td><u>15.83</u></td><td><u>0.99</u></td>
-      <td><u>24.86</u></td><td><u>22.17</u></td><td><u>-2.69</u></td>
-      <td><u>5.97</u></td><td><u>7.37</u></td><td><b>1.40</b></td>
-      <td><u>6.36</u></td><td><u>12.76</u></td><td>6.40</td>
+      <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize 0.9B</b></td>
+      <td><ins>14.84</ins></td><td><ins>15.83</ins></td><td><ins>0.99</ins></td>
+      <td><ins>24.86</ins></td><td><ins>22.17</ins></td><td><ins>-2.69</ins></td>
+      <td><ins>5.97</ins></td><td><ins>7.37</ins></td><td><b>1.40</b></td>
+      <td><ins>6.36</ins></td><td><ins>12.76</ins></td><td>6.40</td>
     </tr>
     <tr>
       <td style="white-space: nowrap;"><b>MOSS Transcribe Diarize Pro</b></td>
       <td><b>13.78</b></td><td><b>14.02</b></td><td><b>0.24</b></td>
       <td><b>18.22</b></td><td><b>13.94</b></td><td><b>-4.27</b></td>
-      <td><b>4.46</b></td><td><b>6.97</b></td><td><u>2.51</u></td>
+      <td><b>4.46</b></td><td><b>6.97</b></td><td><ins>2.51</ins></td>
       <td><b>5.86</b></td><td><b>11.78</b></td><td><b>5.92</b></td>
     </tr>
   </tbody>
