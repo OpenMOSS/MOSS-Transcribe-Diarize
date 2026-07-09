@@ -412,9 +412,8 @@ In this format:
 
 ## More Information
 
-* **GitHub**: <https://github.com/OpenMOSS/MOSS-Transcribe-Diarize>
 * **MOSI.AI**: <https://mosi.cn>
-* **OpenMOSS**: <https://www.open-moss.com>
+* **OpenMOSS**: <https://openmoss.ai/>
 
 ## License
 
