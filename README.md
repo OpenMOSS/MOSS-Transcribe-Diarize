@@ -14,9 +14,7 @@
   <a href="https://x.com/MosiAI_Official"><img src="https://img.shields.io/badge/Twitter-Follow-black?logo=x&amp"></a>
 </div>
 
-MOSS-Transcribe-Diarize 0.9B is an end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness.
-
-Given an audio or video file, the model generates a compact speaker-aware transcript in one pass, including timestamps and anonymous speaker labels such as `[S01]`, `[S02]`, and beyond.
+MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness. MOSS-Transcribe-Diarize Pro is a stronger model with higher overall performance and will be available through API access soon.
 
 ## News
 
