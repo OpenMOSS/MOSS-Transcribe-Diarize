@@ -419,7 +419,7 @@ MOSS-Transcribe-Diarize 0.9B is licensed under the Apache License 2.0.
 
 ## Citation
 
-If you use MOSS-Transcribe-Diarize 0.9B, please cite the technical report:
+If you use MOSS-Transcribe-Diarize, please cite the technical report:
 
 ```bibtex
 @misc{moss_transcribe_diarize_2026,
