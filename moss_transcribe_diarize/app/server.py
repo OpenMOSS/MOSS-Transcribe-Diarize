@@ -5,7 +5,7 @@ from typing import Any
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 
 from .ffmpeg import detect_ffmpeg
-from .jobs import JobManager
+from .jobs import JobConflictError, JobManager
 from .model_runner import ModelRunner
 from .vllm_runner import VllmRunner
 
@@ -187,6 +187,8 @@ def create_app(
             return {"segments": manager.update_segments(job_id, segments, style)}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except JobConflictError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -1044,7 +1046,7 @@ INDEX_HTML = """<!doctype html>
   </main>
 <script>
 const RUNNING_STATES = new Set(['queued', 'loading_model', 'transcribing', 'postprocessing', 'rendering']);
-const EDIT_STATES = new Set(['waiting_review', 'rendering', 'done']);
+const EDIT_STATES = new Set(['waiting_review', 'done']);
 const TERMINAL_STATES = new Set(['waiting_review', 'done', 'failed', 'cancelled']);
 const fileInput = document.querySelector('#file');
 const importTitleEl = document.querySelector('#importTitle');

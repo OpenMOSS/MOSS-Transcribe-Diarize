@@ -213,6 +213,50 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(finished["status"], "waiting_review")
             self.assertEqual(finished["usage"]["generated_tokens"], 5)
 
+    def test_rendering_job_rejects_subtitle_updates(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            app.state.manager.model_runner = FakeRunner()
+            client = TestClient(app)
+
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+            )
+            job_id = created.json()["id"]
+            for _ in range(40):
+                job = client.get(f"/api/jobs/{job_id}").json()
+                if job["status"] == "waiting_review":
+                    break
+                time.sleep(0.05)
+            self.assertEqual(job["status"], "waiting_review")
+
+            original = client.get(f"/api/jobs/{job_id}/segments").json()["segments"]
+            edited = [dict(item) for item in original]
+            edited[0]["text"] = "must not be saved"
+            app.state.manager._set_status(
+                app.state.manager.get_job(job_id), "rendering", 0.97, error=None
+            )
+
+            updated = client.put(
+                f"/api/jobs/{job_id}/segments",
+                json={"segments": edited},
+            )
+
+            self.assertEqual(updated.status_code, 409)
+            self.assertIn("while the job is rendering", updated.json()["detail"])
+            self.assertEqual(
+                client.get(f"/api/jobs/{job_id}/segments").json()["segments"],
+                original,
+            )
+            self.assertIn(
+                "const EDIT_STATES = new Set(['waiting_review', 'done']);",
+                client.get("/").text,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
