@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import queue
 import shutil
 import threading
@@ -490,7 +491,13 @@ class JobManager:
             self._save_job(job)
 
     def _save_job(self, job: JobRecord) -> None:
-        job.job_path.write_text(json.dumps(job.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+        payload = json.dumps(job.to_dict(), ensure_ascii=False, indent=2)
+        temp_path = job.job_path.with_name(f".{job.job_path.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            temp_path.write_text(payload, encoding="utf-8")
+            os.replace(temp_path, job.job_path)
+        finally:
+            temp_path.unlink(missing_ok=True)
 
     def _should_save_live_progress(self, job_id: str) -> bool:
         now = time.time()
