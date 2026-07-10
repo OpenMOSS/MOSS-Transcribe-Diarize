@@ -382,7 +382,13 @@ class JobManager:
                 job = JobRecord.from_dict(data)
                 if not job.job_dir:
                     job.job_dir = str(path.parent)
-                if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
+                if job.status == "rendering" and self._has_complete_segments(job):
+                    job.status = "waiting_review"
+                    job.progress = 0.95
+                    job.error = "Rendering was interrupted by the previous server shutdown. You can retry rendering."
+                    job.updated_at = time.time()
+                    self._save_job(job)
+                elif job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
                     job.status = "failed"
                     job.progress = 1.0
                     job.error = "Interrupted by previous server shutdown."
@@ -391,6 +397,17 @@ class JobManager:
                 self._jobs[job.id] = job
             except Exception:
                 continue
+
+    @staticmethod
+    def _has_complete_segments(job: JobRecord) -> bool:
+        try:
+            payload = json.loads(job.segments_path.read_text(encoding="utf-8"))
+            if not isinstance(payload, list):
+                return False
+            coerce_subtitle_segments(payload)
+        except (OSError, TypeError, ValueError, KeyError, AttributeError):
+            return False
+        return True
 
     def _process_job(self, job: JobRecord) -> None:
         try:

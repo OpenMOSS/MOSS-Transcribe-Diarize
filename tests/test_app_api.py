@@ -306,6 +306,60 @@ class AppApiTest(unittest.TestCase):
                 self.assertEqual(render_job.call_count, 1)
                 release_render.set()
 
+    def test_restart_recovers_interrupted_render_for_review(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            app.state.manager.model_runner = FakeRunner()
+            client = TestClient(app)
+
+            job_ids = []
+            for name in ("rendering.wav", "transcribing.wav"):
+                created = client.post(
+                    "/api/jobs",
+                    files={"file": (name, b"audio", "audio/wav")},
+                )
+                job_ids.append(created.json()["id"])
+            for job_id in job_ids:
+                for _ in range(40):
+                    job = client.get(f"/api/jobs/{job_id}").json()
+                    if job["status"] == "waiting_review":
+                        break
+                    time.sleep(0.05)
+                self.assertEqual(job["status"], "waiting_review")
+
+            rendering_id, transcribing_id = job_ids
+            app.state.manager._set_status(
+                app.state.manager.get_job(rendering_id), "rendering", 0.97, error=None
+            )
+            app.state.manager._set_status(
+                app.state.manager.get_job(transcribing_id), "transcribing", 0.5, error=None
+            )
+
+            restarted = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            restarted_client = TestClient(restarted)
+            recovered = restarted_client.get(f"/api/jobs/{rendering_id}").json()
+
+            self.assertEqual(recovered["status"], "waiting_review")
+            self.assertEqual(recovered["progress"], 0.95)
+            self.assertIn("interrupted", recovered["error"])
+            self.assertIn("retry rendering", recovered["error"])
+            segments = restarted_client.get(f"/api/jobs/{rendering_id}/segments").json()["segments"]
+            edited = [dict(item) for item in segments]
+            edited[0]["text"] = "editable after restart"
+            updated = restarted_client.put(
+                f"/api/jobs/{rendering_id}/segments",
+                json={"segments": edited},
+            )
+            self.assertEqual(updated.status_code, 200)
+
+            failed = restarted_client.get(f"/api/jobs/{transcribing_id}").json()
+            self.assertEqual(failed["status"], "failed")
+            self.assertEqual(failed["progress"], 1.0)
+            self.assertEqual(failed["error"], "Interrupted by previous server shutdown.")
+
 
 if __name__ == "__main__":
     unittest.main()
