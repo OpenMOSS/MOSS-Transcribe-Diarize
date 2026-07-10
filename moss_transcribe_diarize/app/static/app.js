@@ -8,7 +8,7 @@ import {
 } from './i18n.js';
 
 const RUNNING_STATES = new Set(['queued', 'loading_model', 'transcribing', 'postprocessing', 'rendering']);
-const EDIT_STATES = new Set(['waiting_review', 'rendering', 'done']);
+const EDIT_STATES = new Set(['waiting_review', 'done']);
 const TERMINAL_STATES = new Set(['waiting_review', 'done', 'failed', 'cancelled']);
 const fileInput = document.querySelector('#file');
 const importTitleEl = document.querySelector('#importTitle');

@@ -159,6 +159,7 @@ class JobManager:
         self.temperature = temperature
         self._jobs: dict[str, JobRecord] = {}
         self._queue: queue.Queue[str] = queue.Queue()
+        self._state_lock = threading.RLock()
         self._render_lock = threading.Lock()
         self._progress_save_times: dict[str, float] = {}
         self._load_existing_jobs()
@@ -305,15 +306,21 @@ class JobManager:
         style_payload: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         job = self.get_job(job_id)
-        segments = coerce_subtitle_segments(payload)
-        style = SubtitleStyle.from_dict(style_payload) if style_payload is not None else None
-        if style is not None:
-            job.subtitle_style = style.to_dict()
-        self._write_subtitle_files(job, segments, style=style)
-        if job.status == "done":
-            self._set_status(job, "waiting_review", 0.95, error=None)
-        else:
-            self._touch(job, error=None)
+        with self._state_lock:
+            if job.status == "rendering":
+                raise JobManagerError(
+                    "job_running",
+                    "Cannot update subtitles while the job is rendering.",
+                )
+            segments = coerce_subtitle_segments(payload)
+            style = SubtitleStyle.from_dict(style_payload) if style_payload is not None else None
+            if style is not None:
+                job.subtitle_style = style.to_dict()
+            self._write_subtitle_files(job, segments, style=style)
+            if job.status == "done":
+                self._set_status(job, "waiting_review", 0.95, error=None)
+            else:
+                self._touch(job, error=None)
         return [segment.to_dict() for segment in segments]
 
     def render(self, job_id: str, style_payload: dict[str, Any] | None = None) -> JobRecord:
@@ -448,9 +455,10 @@ class JobManager:
         error: str | None = None,
         save: bool = True,
     ) -> None:
-        job.status = status
-        job.progress = max(0.0, min(1.0, progress))
-        self._touch(job, error=error, save=save)
+        with self._state_lock:
+            job.status = status
+            job.progress = max(0.0, min(1.0, progress))
+            self._touch(job, error=error, save=save)
 
     def _resolve_inference_options(
         self,
