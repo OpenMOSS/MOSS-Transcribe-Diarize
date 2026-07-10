@@ -324,12 +324,25 @@ class JobManager:
             raise RuntimeError("ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
             raise RuntimeError("No subtitle segments are available for this job.")
-        threading.Thread(
+        style = SubtitleStyle.from_dict(style_payload)
+        thread = threading.Thread(
             target=self._render_job,
-            args=(job.id, SubtitleStyle.from_dict(style_payload)),
+            args=(job.id, style),
             name=f"mtd-render-{job.id}",
             daemon=True,
-        ).start()
+        )
+        with self._state_lock:
+            if job.status == "rendering":
+                raise JobConflictError("This job is already rendering.")
+            previous_status = job.status
+            previous_progress = job.progress
+            previous_error = job.error
+            self._set_status(job, "rendering", 0.97, error=None)
+            try:
+                thread.start()
+            except Exception:
+                self._set_status(job, previous_status, previous_progress, error=previous_error)
+                raise
         return job
 
     def download_path(self, job_id: str, kind: str) -> Path:
@@ -410,7 +423,6 @@ class JobManager:
         job = self.get_job(job_id)
         with self._render_lock:
             try:
-                self._set_status(job, "rendering", 0.97, error=None)
                 segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
                 width, height = probe_video_size(job.input_path)
                 write_text(job.ass_path, export_ass(segments, style=style, video_width=width, video_height=height))
