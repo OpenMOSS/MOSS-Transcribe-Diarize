@@ -18,72 +18,72 @@
 </div>
 
 <p align="center">
-  <b>English</b> | <a href="./README_zh.md">中文</a>
+  <b>中文</b> | <a href="./README.md">English</a>
 </p>
 
-MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness. MOSS-Transcribe-Diarize Pro is a stronger model with higher overall performance and will be available through API access soon.
+MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型，面向长时、多说话人场景，支持语音转写、说话人分离（diarization）、时间戳标注以及声学事件感知。MOSS-Transcribe-Diarize Pro 是性能更强的版本，整体表现更优，即将通过 API 方式开放使用。
 
-## News
+## 最新动态
 
-* 2026-07-14: 🏆 MOSS-Transcribe-Diarize won first place in the 2nd MLC-SLM Challenge at INTERSPEECH 2026, covering 14 languages.
-* 2026-07-09: Open-sourced MOSS-Transcribe-Diarize 0.9B.
+* 2026-07-14：🏆 MOSS-Transcribe-Diarize 在 INTERSPEECH 2026 第二届 MLC-SLM Challenge 中夺得第一名，覆盖 14 种语言。
+* 2026-07-09：开源 MOSS-Transcribe-Diarize 0.9B。
 
-## Contents
+## 目录
 
-- [Introduction](#introduction)
-- [Model Architecture](#model-architecture)
-- [Evaluation](#evaluation)
-  - [Objective Evaluation](#objective-evaluation)
-- [Quickstart](#quickstart)
-  - [Environment Setup](#environment-setup)
-  - [Python Usage](#python-usage)
-  - [Serve with SGLang Omni](#serve-with-sglang-omni)
-  - [Serve with vLLM](#serve-with-vllm)
-  - [Custom Prompt and Hotwords](#custom-prompt-and-hotwords)
-  - [Subtitle Web App](#subtitle-web-app)
-- [Citation](#citation)
-- [Star History](#star-history)
+- [简介](#简介)
+- [模型架构](#模型架构)
+- [评测](#评测)
+  - [客观评测](#客观评测)
+- [快速开始](#快速开始)
+  - [环境准备](#环境准备)
+  - [Python 用法](#python-用法)
+  - [使用 SGLang Omni 部署](#使用-sglang-omni-部署)
+  - [使用 vLLM 部署](#使用-vllm-部署)
+  - [自定义 Prompt 与热词](#自定义-prompt-与热词)
+  - [字幕 Web 应用](#字幕-web-应用)
+- [引用](#引用)
+- [Star 趋势](#star-趋势)
 
-## Introduction
+## 简介
 
-MOSS-Transcribe-Diarize is our flagship SOTA model family for turning real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, these models jointly perform speech transcription and speaker diarization, producing time-aligned text with precise timestamps and consistent speaker labels such as `[S01]`, `[S02]`, and beyond.
+MOSS-Transcribe-Diarize 是我们的旗舰级 SOTA 模型系列，能够一次性将真实世界的长音频转换为结构化、带说话人标注的转写结果。它不再依赖将独立的 ASR 与说话人分离系统拼接起来的方案，而是联合完成语音转写与说话人分离，直接输出带精确时间戳、说话人标签（如 `[S01]`、`[S02]` 等）一致的时间对齐文本。
 
-Built for meetings, calls, podcasts, interviews, lectures, and video content, MOSS-Transcribe-Diarize is designed to handle long, messy, multi-speaker recordings where reliability matters. It can also emit optional acoustic event annotations, giving downstream systems a richer understanding of what happened, who spoke, and when.
+MOSS-Transcribe-Diarize 面向会议、通话、播客、访谈、讲座和视频内容而设计，能够可靠地处理长时、嘈杂、多说话人的录音。它还可以选择性地输出声学事件标注，让下游系统更全面地理解“发生了什么、谁在说话、何时说话”。
 
-MOSS-Transcribe-Diarize supports 50+ languages.
+MOSS-Transcribe-Diarize 支持 50+ 种语言。
 
-The model accepts raw audio and emits a compact timestamped transcript. The canonical output format is:
+模型接收原始音频，输出紧凑的带时间戳转写文本。标准输出格式为：
 
 ```text
 [start_time][Sxx]transcribed speech[end_time]
 ```
 
-Timestamps are expressed in seconds, and adjacent segments are concatenated into a single stream, for example:
+时间戳以秒为单位，相邻片段会拼接成单条连续序列，例如：
 
 ```text
 [0.48][S01]Welcome everyone[1.66][12.26][S02]The new transcription pipeline is ready for evaluation[13.81][14.36][S01]Great, include the diarization results in the report[18.76]
 ```
 
-## Model Architecture
+## 模型架构
 
 <p align="center">
   <img src="./assets/Model_Architecture.png" alt="MOSS-Transcribe-Diarize model architecture" width="90%" />
 </p>
 
-| Component | Specification |
+| 组件 | 规格说明 |
 |---|---|
-| Text backbone | Qwen3-0.6B style causal decoder |
-| Audio encoder | Whisper-Medium encoder configuration |
-| Audio frontend | `WhisperFeatureExtractor`, 16 kHz, 80 mel bins, 30 s chunks |
-| Audio-text bridge | 4x temporal merge + MLP adaptor |
-| Fusion | Audio features replace <code>&lt;&#124;audio_pad&#124;&gt;</code> embeddings via `masked_scatter` |
-| Output format | Compact `[start][Sxx]text[end]` transcript with speaker tags such as `[S01]` |
+| 文本主干 | Qwen3-0.6B 风格的因果解码器（causal decoder） |
+| 音频编码器 | Whisper-Medium encoder 配置 |
+| 音频前端 | `WhisperFeatureExtractor`，16 kHz，80 个 mel 频带，30 秒分块 |
+| 音频-文本桥接 | 4 倍时间维度合并（temporal merge）+ MLP 适配器 |
+| 特征融合 | 音频特征通过 `masked_scatter` 替换 <code>&lt;&#124;audio_pad&#124;&gt;</code> 的 embedding |
+| 输出格式 | 紧凑的 `[start][Sxx]text[end]` 转写文本，含 `[S01]` 等说话人标签 |
 
-## Evaluation
+## 评测
 
-### Objective Evaluation
+### 客观评测
 
-We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Error Rate (CER), concatenated minimum-permutation Character Error Rate (cpCER), and Δcp. Lower is better for all metrics. Best results are bolded, second-best results are underlined. A dash (`-`) indicates that the result is unavailable.
+我们使用三个客观指标评测 MOSS-Transcribe-Diarize：字符错误率（CER）、拼接后最小排列字符错误率（cpCER）以及 Δcp。所有指标均为越低越好。最优结果以**加粗**表示，次优结果以<ins>下划线</ins>表示。短横线（`-`）表示该结果不可用。
 
 <div style="overflow-x: auto;">
 <table style="white-space: nowrap;">
@@ -163,11 +163,11 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
 </table>
 </div>
 
-## Quickstart
+## 快速开始
 
-### Environment Setup
+### 环境准备
 
-Use a clean Python environment. The project is tested with Python 3.12 and Transformers 5.x.
+请使用干净的 Python 环境。本项目在 Python 3.12 与 Transformers 5.x 上测试通过。
 
 ```bash
 git clone https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
@@ -177,7 +177,7 @@ source .venv/bin/activate
 uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ```
 
-### Python Usage
+### Python 用法
 
 ```python
 import torch
@@ -220,26 +220,26 @@ for segment in parse_transcript(result["text"]):
     print(segment.start, segment.end, segment.speaker, segment.text)
 ```
 
-The message flow follows the common Qwen multimodal pattern. The chat template is loaded from the model by `AutoProcessor`:
+消息流程遵循常见的 Qwen 多模态范式。对话模板由 `AutoProcessor` 从模型侧加载：
 
-1. `processor.apply_chat_template(messages, tokenize=False)` renders text with audio placeholders.
-2. `process_audio_info(messages, sampling_rate)` loads audio waveforms from the same messages.
-3. `processor(text=text, audio=audios)` computes Whisper input features and expands audio placeholders.
-4. `model.generate(...)` produces timestamped transcription and diarization text.
+1. `processor.apply_chat_template(messages, tokenize=False)` 渲染文本并插入音频占位符。
+2. `process_audio_info(messages, sampling_rate)` 从同一份 messages 中加载音频波形。
+3. `processor(text=text, audio=audios)` 计算 Whisper 输入特征并展开音频占位符。
+4. `model.generate(...)` 生成带时间戳的转写与说话人分离文本。
 
-### Serve with SGLang Omni
+### 使用 SGLang Omni 部署
 
-[SGLang Omni](https://github.com/sgl-project/sglang-omni) is the recommended serving backend for MOSS-Transcribe-Diarize, providing optimized long-form audio inference through the OpenAI-compatible `/v1/audio/transcriptions` endpoint.
+[SGLang Omni](https://github.com/sgl-project/sglang-omni) 是 MOSS-Transcribe-Diarize 推荐的部署后端，通过兼容 OpenAI 的 `/v1/audio/transcriptions` 接口，为长音频提供经过优化的推理能力。
 
-SGLang Omni currently targets CUDA 13 environments. Please follow the official [installation guide](https://github.com/sgl-project/sglang-omni/blob/main/docs/get_started/installation.md) for the supported setup. For CUDA 12 environments, the vLLM workflow is also available below.
+SGLang Omni 目前面向 CUDA 13 环境。请参考官方[安装指南](https://github.com/sgl-project/sglang-omni/blob/main/docs/get_started/installation.md)完成受支持的配置。若为 CUDA 12 环境，也可使用下文的 vLLM 方案。
 
-Download the model:
+下载模型：
 
 ```bash
 hf download OpenMOSS-Team/MOSS-Transcribe-Diarize
 ```
 
-Serve the model:
+启动服务：
 
 ```bash
 sgl-omni serve \
@@ -250,7 +250,7 @@ sgl-omni serve \
   --mem-fraction-static 0.80
 ```
 
-Use `response_format=verbose_json` when you need parsed speaker segments. `json` returns the raw transcript text only.
+当你需要解析后的说话人分段时，请使用 `response_format=verbose_json`。`json` 仅返回原始转写文本。
 
 ```bash
 curl -X POST http://localhost:8000/v1/audio/transcriptions \
@@ -280,7 +280,7 @@ for segment in payload.get("segments", []):
     print(f"[{segment['start']:.2f}-{segment['end']:.2f}] {segment['text']}")
 ```
 
-For longer multi-speaker audio, raise `max_new_tokens` so the decoder can finish the full diarized transcript:
+对于更长的多说话人音频，请调大 `max_new_tokens`，以便解码器完整生成整段分离后的转写：
 
 ```bash
 curl -X POST http://localhost:8000/v1/audio/transcriptions \
@@ -290,21 +290,21 @@ curl -X POST http://localhost:8000/v1/audio/transcriptions \
   -F max_new_tokens=65536
 ```
 
-| Parameter | Type | Default | Description |
+| 参数 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `file` | file | required | Audio file uploaded as multipart form data |
-| `model` | string | server default | Model identifier |
-| `language` | string | unset | Optional language hint |
-| `response_format` | string | `json` | `json`, `verbose_json`, or `text` |
-| `temperature` | float | model default (`0.0`) | Sampling temperature |
-| `max_new_tokens` | int | `5120` | Max generated tokens; raise for long audio, for example `65536` |
-| `prompt` | string | unset | Optional instruction override; omit to use the built-in transcribe+diarize prompt |
+| `file` | file | 必填 | 以 multipart form data 上传的音频文件 |
+| `model` | string | 服务端默认 | 模型标识符 |
+| `language` | string | 未设置 | 可选的语言提示 |
+| `response_format` | string | `json` | `json`、`verbose_json` 或 `text` |
+| `temperature` | float | 模型默认（`0.0`） | 采样温度 |
+| `max_new_tokens` | int | `5120` | 最大生成 token 数；长音频请调大，例如 `65536` |
+| `prompt` | string | 未设置 | 可选的指令覆盖；留空则使用内置的转写+分离 prompt |
 
-For benchmarking, performance numbers, and implementation details, see the [SGLang Omni cookbook](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_transcribe_diarize.md). The following single-H100 results are reported for short- and long-sequence multi-speaker ASR tasks.
+关于基准测试、性能数据与实现细节，请参阅 [SGLang Omni cookbook](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_transcribe_diarize.md)。下列结果基于单张 H100，分别针对短序列与长序列的多说话人 ASR 任务。
 
-`movies` short-sequence ASR:
+`movies` 短序列 ASR：
 
-| Concurrency | Throughput (req/s) | Mean latency (s) | RTF mean | audio_s/s |
+| 并发数 | 吞吐（req/s） | 平均延迟（s） | RTF 均值 | audio_s/s |
 |---:|---:|---:|---:|---:|
 | 1 | 2.57 | 0.388 | 0.0612 | 29.76 |
 | 2 | 4.89 | 0.409 | 0.0659 | 56.55 |
@@ -312,9 +312,9 @@ For benchmarking, performance numbers, and implementation details, see the [SGLa
 | 8 | 6.80 | 0.533 | 0.0810 | 78.70 |
 | 16 | 7.08 | 0.659 | 0.0922 | 81.98 |
 
-`aishell4_long` long-sequence ASR:
+`aishell4_long` 长序列 ASR：
 
-| Concurrency | Throughput (req/s) | Mean latency (s) | RTF mean | audio_s/s |
+| 并发数 | 吞吐（req/s） | 平均延迟（s） | RTF 均值 | audio_s/s |
 |---:|---:|---:|---:|---:|
 | 1 | 0.022 | 45.2 | 0.0197 | 50.64 |
 | 2 | 0.032 | 60.7 | 0.0265 | 74.25 |
@@ -322,9 +322,9 @@ For benchmarking, performance numbers, and implementation details, see the [SGLa
 | 8 | 0.040 | 172.6 | 0.0754 | 90.62 |
 | 16 | 0.043 | 282.8 | 0.1237 | 98.83 |
 
-### Serve with vLLM
+### 使用 vLLM 部署
 
-MOSS-Transcribe-Diarize supports vLLM serving through the OpenAI-compatible transcription API. Use a pinned vLLM nightly build that includes the MOSS-Transcribe-Diarize model registration. Choose one of the following commands: for CUDA 12 environments, use `cu129`; for CUDA 13 environments, use `cu130`.
+MOSS-Transcribe-Diarize 通过兼容 OpenAI 的转写 API 支持 vLLM 部署。请使用已包含 MOSS-Transcribe-Diarize 模型注册的固定版 vLLM nightly 构建。从下列命令中任选其一：CUDA 12 环境使用 `cu129`，CUDA 13 环境使用 `cu130`。
 
 ```bash
 uv pip install -U vllm \
@@ -332,7 +332,7 @@ uv pip install -U vllm \
   --extra-index-url https://wheels.vllm.ai/68b4a1d582818e67adc903bf1b8fc5a5447da2fa/cu129
 ```
 
-or:
+或：
 
 ```bash
 uv pip install -U vllm \
@@ -352,25 +352,25 @@ curl http://localhost:8000/v1/audio/transcriptions \
   -F temperature="0"
 ```
 
-### Custom Prompt and Hotwords
+### 自定义 Prompt 与热词
 
-The default prompt is optimized for timestamped transcription and speaker diarization:
+默认 prompt 针对带时间戳的转写与说话人分离进行了优化：
 
 ```text
 请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。
 ```
 
-To add hotwords, append a short hint to the default prompt:
+若要添加热词，只需在默认 prompt 后追加简短提示：
 
 ```text
 请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。热词提示：热词1, 热词2, 热词3
 ```
 
-More prompt recipes are available in [examples/prompts.md](examples/prompts.md). The same prompt can be passed to `build_transcription_messages`, `mtd-subtitle`, and `mtd-subtitle-web`.
+更多 prompt 用例见 [examples/prompts.md](examples/prompts.md)。同一个 prompt 可传入 `build_transcription_messages`、`mtd-subtitle` 与 `mtd-subtitle-web`。
 
-### Subtitle Web App
+### 字幕 Web 应用
 
-The package also includes a local subtitle workflow for upload, review, subtitle export, and optional FFmpeg burn-in:
+本工具包还内置了一个本地字幕工作流，支持上传、审阅、字幕导出，以及可选的 FFmpeg 压制（burn-in）：
 
 ```bash
 mtd-subtitle-web \
@@ -379,9 +379,9 @@ mtd-subtitle-web \
   --port 7860
 ```
 
-Open `http://127.0.0.1:7860`, upload an audio/video file, review the parsed subtitle segments, then download JSON/SRT/ASS or burn an MP4 if `ffmpeg` and `ffprobe` are available on `PATH`.
+打开 `http://127.0.0.1:7860`，上传音频/视频文件，审阅解析出的字幕分段，然后下载 JSON/SRT/ASS；若 `PATH` 中存在 `ffmpeg` 与 `ffprobe`，还可压制生成 MP4。
 
-For batch processing:
+批量处理：
 
 ```bash
 mtd-subtitle /path/to/input.mp4 \
@@ -390,9 +390,9 @@ mtd-subtitle /path/to/input.mp4 \
   --render
 ```
 
-## Citation
+## 引用
 
-If you use MOSS-Transcribe-Diarize, please cite the technical report:
+如果你使用了 MOSS-Transcribe-Diarize，请引用我们的技术报告：
 
 ```bibtex
 @misc{moss_transcribe_diarize_2026,
@@ -406,7 +406,7 @@ If you use MOSS-Transcribe-Diarize, please cite the technical report:
 }
 ```
 
-## Star History
+## Star 趋势
 
 <p align="center">
   <a href="https://www.star-history.com/#OpenMOSS/MOSS-Transcribe-Diarize&amp;Date">
