@@ -408,10 +408,13 @@ If you use MOSS-Transcribe-Diarize, please cite the technical report:
 }
 ```
 
+
 ## Star History
 
-<p align="center">
-  <a href="https://www.star-history.com/#OpenMOSS/MOSS-Transcribe-Diarize&amp;Date">
-    <img width="700" alt="Star History Chart" src="https://api.star-history.com/svg?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&amp;type=Date">
-  </a>
-</p>
+<a href="https://www.star-history.com/?type=date&repos=OpenMOSS%2FMOSS-Transcribe-Diarize">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&theme=dark&legend=top-left&sealed_token=Il8QLPD_5o0tps1zgTe1M-lkjb5mdSSINKxV0Dyp1nSc4afmHK0WBqJ02wxe0gXWTBhOwjvUwCn37qbCf1qexm0U1nGmYuY8PDb7XXBJBuynMc_I1QB71w-4QzwfsFgFojRyStdroH1Agu4ISBD5ct1_X5ISNNk5dCu-0NM3OTZ41mqMPjq5Hn0kB6zY" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=Il8QLPD_5o0tps1zgTe1M-lkjb5mdSSINKxV0Dyp1nSc4afmHK0WBqJ02wxe0gXWTBhOwjvUwCn37qbCf1qexm0U1nGmYuY8PDb7XXBJBuynMc_I1QB71w-4QzwfsFgFojRyStdroH1Agu4ISBD5ct1_X5ISNNk5dCu-0NM3OTZ41mqMPjq5Hn0kB6zY" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=Il8QLPD_5o0tps1zgTe1M-lkjb5mdSSINKxV0Dyp1nSc4afmHK0WBqJ02wxe0gXWTBhOwjvUwCn37qbCf1qexm0U1nGmYuY8PDb7XXBJBuynMc_I1QB71w-4QzwfsFgFojRyStdroH1Agu4ISBD5ct1_X5ISNNk5dCu-0NM3OTZ41mqMPjq5Hn0kB6zY" />
+ </picture>
+</a>
