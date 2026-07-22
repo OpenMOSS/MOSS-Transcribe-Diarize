@@ -173,6 +173,8 @@ class AppApiTest(unittest.TestCase):
             with patch("moss_transcribe_diarize.app.jobs.detect_ffmpeg", return_value=Missing()):
                 render = client.post(f"/api/jobs/{job_id}/render", json={"style": {}})
             self.assertEqual(render.status_code, 503)
+            self.assertEqual(render.json()["code"], "ffmpeg_unavailable")
+            self.assertIsInstance(render.json()["detail"], str)
 
             deleted = client.delete(f"/api/jobs/{job_id}")
             self.assertEqual(deleted.status_code, 200)

@@ -382,6 +382,7 @@ mtd-subtitle-web \
 ```
 
 Open `http://127.0.0.1:7860`, upload an audio/video file, review the parsed subtitle segments, then download JSON/SRT/ASS or burn an MP4 if `ffmpeg` and `ffprobe` are available on `PATH`.
+The web interface supports Simplified Chinese and English. It follows the browser language on first use, and the language selector in the header applies changes immediately and remembers your choice.
 
 For batch processing:
 

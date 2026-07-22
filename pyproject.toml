@@ -39,3 +39,6 @@ dev = ["pytest"]
 
 [tool.setuptools.packages.find]
 include = ["moss_transcribe_diarize*"]
+
+[tool.setuptools.package-data]
+"moss_transcribe_diarize.app" = ["static/*", "static/locales/*.json"]
