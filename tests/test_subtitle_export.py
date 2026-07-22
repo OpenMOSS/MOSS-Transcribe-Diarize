@@ -49,6 +49,22 @@ class SubtitleExportTest(unittest.TestCase):
 
         self.assertIn("Alice: hello", text)
 
+    def test_export_ass_offsets_overlapping_segments(self):
+        text = export_ass(
+            [
+                SubtitleSegment("seg_0001", 0.0, 5.0, "S01", "one"),
+                SubtitleSegment("seg_0002", 1.0, 3.0, "S02", "two"),
+                SubtitleSegment("seg_0003", 5.0, 6.0, "S01", "three"),
+            ],
+            style=SubtitleStyle(font_size=50, margin_v=60, speaker_colors=False),
+            video_width=1280,
+            video_height=720,
+        )
+
+        self.assertIn("Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,60,,S01: one", text)
+        self.assertIn("Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,110,,S02: two", text)
+        self.assertIn("Dialogue: 0,0:00:05.00,0:00:06.00,Default,,0,0,60,,S01: three", text)
+
     def test_export_json(self):
         data = json.loads(export_json([SubtitleSegment("seg_0001", 0, 1, "S01", "hello")]))
 

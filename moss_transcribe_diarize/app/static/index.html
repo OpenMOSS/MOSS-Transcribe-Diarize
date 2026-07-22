@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="app.title">MOSS 字幕工作台</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header>
+    <h1 data-i18n="app.title">MOSS 字幕工作台</h1>
+    <div class="header-actions">
+      <span id="runtime" class="pill" data-i18n="runtime.checking">检测中</span>
+      <select
+        id="localeSelect"
+        class="locale-select"
+        aria-label="界面语言"
+        title="界面语言"
+        data-i18n-aria-label="locale.label"
+        data-i18n-title="locale.label"
+      >
+        <option value="zh-CN">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </header>
+  <main>
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-title">
+          <strong data-i18n="jobs.title">任务</strong>
+        </div>
+        <div class="sidebar-tools">
+          <span id="jobCount" class="meta">0 个任务</span>
+          <button id="refreshJobs" class="small ghost" data-i18n="actions.refresh">刷新</button>
+        </div>
+        <button id="newTask" class="primary sidebar-primary" data-i18n="actions.importMedia">导入媒体</button>
+      </div>
+      <div class="sidebar-toggle-zone">
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="收起任务栏" title="收起任务栏"></button>
+      </div>
+      <div id="jobList" class="task-list"></div>
+    </aside>
+    <section class="content">
+      <section id="importView" class="view center-view">
+        <div class="import-panel">
+          <h2 id="importTitle" class="view-title" data-i18n="actions.importMedia">导入媒体</h2>
+          <label for="file" data-i18n="fields.mediaFile">媒体文件</label>
+          <input id="file" type="file" accept="audio/*,video/*,.mp4,.mov,.mkv,.wav,.mp3,.m4a" />
+          <div id="rerunSource" class="meta" style="margin-top:8px"></div>
+          <details class="advanced">
+            <summary>
+              <span>
+                <span class="advanced-title" data-i18n="inference.settings">推理参数</span>
+                <span class="advanced-hint" data-i18n="inference.defaultsHint">默认不用改</span>
+              </span>
+            </summary>
+            <div class="advanced-body">
+              <label for="prompt" style="margin-top:10px" data-i18n="inference.prompt">推理 Prompt</label>
+              <textarea id="prompt" class="prompt-input"></textarea>
+              <div class="row" style="margin-top:10px">
+                <div>
+                  <label for="maxNewTokens" data-i18n="inference.outputTokens">输出 tokens</label>
+                  <input id="maxNewTokens" type="number" min="1" step="1" value="2048" />
+                </div>
+                <div>
+                  <label for="maxLen" data-i18n="inference.maxContext">上下文上限</label>
+                  <input id="maxLen" type="number" min="1" step="1" value="131072" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:10px">
+                <div>
+                  <label for="decoding" data-i18n="inference.decoding">解码</label>
+                  <select id="decoding"><option value="greedy">greedy</option><option value="sample">sample</option></select>
+                </div>
+                <div>
+                  <label for="temperature" data-i18n="inference.temperature">温度</label>
+                  <input id="temperature" type="number" min="0.01" step="0.05" value="1.0" />
+                </div>
+              </div>
+              <div id="modelinfo" class="meta" style="margin-top:8px"></div>
+            </div>
+          </details>
+          <button id="upload" class="primary" data-i18n="actions.startTranscription">开始转写</button>
+          <div id="importError" class="error" style="margin-top:10px"></div>
+        </div>
+      </section>
+      <section id="processingView" class="view center-view is-hidden">
+        <div class="process-panel">
+          <h2 id="processTitle" class="view-title" data-i18n="processing.transcribing">转写中</h2>
+          <div id="processName"></div>
+          <div id="processMeta" class="meta" style="margin-top:8px"></div>
+          <div class="progress"><div id="processBar" class="bar"></div></div>
+          <div id="processError" class="error"></div>
+          <div class="actions" style="margin-top:14px">
+            <button id="deleteCurrent" data-i18n="actions.deleteJob">删除任务</button>
+            <button id="openNew" data-i18n="actions.newJob">新建任务</button>
+          </div>
+        </div>
+      </section>
+      <section id="workbench" class="view workbench is-hidden">
+        <div class="editor-grid">
+          <div class="preview-column">
+            <div class="video-shell">
+              <div id="videoStage" class="video-stage">
+                <video id="preview" controls></video>
+                <div id="subtitleOverlay" class="subtitle-overlay"></div>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="subtitle-table">
+                <thead>
+                  <tr>
+                    <th class="time" data-i18n="segments.start">开始</th>
+                    <th class="time" data-i18n="segments.end">结束</th>
+                    <th class="speaker" data-i18n="segments.speaker">说话人</th>
+                    <th data-i18n="segments.subtitle">字幕</th>
+                  </tr>
+                </thead>
+                <tbody id="segments"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="inspector">
+            <div class="group">
+              <div class="task-header">
+                <label style="margin:0" data-i18n="jobs.current">当前任务</label>
+                <span id="taskStatus" class="pill" data-i18n="status.waiting_review">待校对</span>
+              </div>
+              <div id="selectedName" class="task-title"></div>
+              <div id="taskUsage" class="meta task-meta"></div>
+              <div id="taskParams" class="meta task-meta"></div>
+              <div id="taskNotice" class="task-notice is-hidden"></div>
+              <button id="render" class="warn primary-action" data-i18n="actions.burnVideo">烧录视频</button>
+              <div class="secondary-actions">
+                <div>
+                  <button id="save" class="primary is-hidden" data-i18n="actions.saveChanges">保存修改</button>
+                  <div id="saveStatus" class="save-status saved" data-i18n="save.saved">已保存</div>
+                </div>
+                <button id="rerun" class="ghost" data-i18n="actions.rerun">重新转写</button>
+              </div>
+            </div>
+            <div class="group">
+              <label data-i18n="speaker.names">说话人名称</label>
+              <div id="speakerMap" class="speaker-map"></div>
+            </div>
+            <div class="group">
+              <div class="row">
+                <div>
+                  <label for="fontSize" data-i18n="style.fontSize">字号</label>
+                  <input id="fontSize" type="number" min="18" max="96" value="48" />
+                </div>
+                <div>
+                  <label for="marginV" data-i18n="style.marginV">底边距</label>
+                  <input id="marginV" type="number" min="12" max="220" value="56" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:10px">
+                <div>
+                  <label for="showSpeaker" data-i18n="style.speaker">说话人</label>
+                  <select id="showSpeaker"><option value="true" data-i18n="options.show">显示</option><option value="false" data-i18n="options.hide">隐藏</option></select>
+                </div>
+                <div>
+                  <label for="speakerColors" data-i18n="style.colors">颜色</label>
+                  <select id="speakerColors"><option value="true" data-i18n="options.bySpeaker">按说话人</option><option value="false" data-i18n="options.uniform">统一</option></select>
+                </div>
+              </div>
+            </div>
+            <div class="group">
+              <label data-i18n="outputs.title">输出</label>
+              <div class="downloads" id="downloads"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>

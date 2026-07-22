@@ -25,6 +25,7 @@ MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understandi
 
 ## News
 
+* 2026-07-22: The subtitle Web UI now supports both Simplified Chinese and English.
 * 2026-07-14: 🏆 MOSS-Transcribe-Diarize won first place in the 2nd MLC-SLM Challenge at INTERSPEECH 2026, covering 14 languages.
 * 2026-07-09: Open-sourced MOSS-Transcribe-Diarize 0.9B.
 
@@ -382,6 +383,7 @@ mtd-subtitle-web \
 ```
 
 Open `http://127.0.0.1:7860`, upload an audio/video file, review the parsed subtitle segments, then download JSON/SRT/ASS or burn an MP4 if `ffmpeg` and `ffprobe` are available on `PATH`.
+The web interface supports Simplified Chinese and English. It follows the browser language on first use, and the language selector in the header applies changes immediately and remembers your choice.
 
 For batch processing:
 

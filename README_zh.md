@@ -25,6 +25,7 @@ MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型
 
 ## 最新动态
 
+* 2026-07-22：字幕 Web 界面现已支持简体中文和英文。
 * 2026-07-14：🏆 MOSS-Transcribe-Diarize 在 INTERSPEECH 2026 第二届 MLC-SLM Challenge 中夺得第一名，覆盖 14 种语言。
 * 2026-07-09：开源 MOSS-Transcribe-Diarize 0.9B。
 
@@ -382,6 +383,7 @@ mtd-subtitle-web \
 ```
 
 打开 `http://127.0.0.1:7860`，上传音频/视频文件，审阅解析出的字幕分段，然后下载 JSON/SRT/ASS；若 `PATH` 中存在 `ffmpeg` 与 `ffprobe`，还可压制生成 MP4。
+Web 界面支持简体中文和英文。首次使用时会跟随浏览器语言，也可通过页头的语言选择器即时切换并记住选择。
 
 批量处理：
 

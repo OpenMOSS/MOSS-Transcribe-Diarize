@@ -28,6 +28,12 @@ from .model_runner import ModelRunner
 TERMINAL_STATES = {"waiting_review", "done", "failed", "cancelled"}
 
 
+class JobManagerError(Exception):
+    def __init__(self, code: str, detail: str):
+        super().__init__(detail)
+        self.code = code
+
+
 @dataclass(slots=True)
 class JobRecord:
     id: str
@@ -259,7 +265,7 @@ class JobManager:
         source = self.get_job(job_id)
         input_path = Path(source.input_path)
         if not input_path.exists():
-            raise FileNotFoundError(str(input_path))
+            raise JobManagerError("media_missing", "Media file is missing.")
         return self.create_job_from_file(
             input_path,
             media_name=source.media_name,
@@ -277,12 +283,12 @@ class JobManager:
         try:
             return self._jobs[job_id]
         except KeyError as exc:
-            raise KeyError(f"Unknown job: {job_id}") from exc
+            raise JobManagerError("job_not_found", f"Unknown job: {job_id}") from exc
 
     def delete_job(self, job_id: str) -> None:
         job = self.get_job(job_id)
         if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
-            raise RuntimeError("Cannot delete a job while it is running.")
+            raise JobManagerError("job_running", "Cannot delete a job while it is running.")
         self._jobs.pop(job_id, None)
         shutil.rmtree(job.job_dir, ignore_errors=True)
 
@@ -313,9 +319,9 @@ class JobManager:
     def render(self, job_id: str, style_payload: dict[str, Any] | None = None) -> JobRecord:
         job = self.get_job(job_id)
         if not detect_ffmpeg().available:
-            raise RuntimeError("ffmpeg and ffprobe are not available on PATH.")
+            raise JobManagerError("ffmpeg_unavailable", "ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
-            raise RuntimeError("No subtitle segments are available for this job.")
+            raise JobManagerError("subtitles_unavailable", "No subtitle segments are available for this job.")
         threading.Thread(
             target=self._render_job,
             args=(job.id, SubtitleStyle.from_dict(style_payload)),
@@ -338,7 +344,7 @@ class JobManager:
             raise KeyError(f"Unsupported download kind: {kind}")
         path = table[kind]
         if not path.exists():
-            raise FileNotFoundError(str(path))
+            raise JobManagerError("file_not_ready", f"File is not ready: {kind}")
         return path
 
     def _worker_loop(self) -> None:
@@ -460,11 +466,11 @@ class JobManager:
         max_new_tokens_value = self.max_new_tokens if max_new_tokens is None else int(max_new_tokens)
         decoding_value = decoding or self.decoding
         if decoding_value not in {"greedy", "sample"}:
-            raise ValueError("decoding must be greedy or sample.")
+            raise JobManagerError("invalid_decoding", "decoding must be greedy or sample.")
         if max_length_value <= 0:
-            raise ValueError("max_length must be greater than 0.")
+            raise JobManagerError("invalid_max_length", "max_length must be greater than 0.")
         if max_new_tokens_value <= 0:
-            raise ValueError("max_new_tokens must be greater than 0.")
+            raise JobManagerError("invalid_max_new_tokens", "max_new_tokens must be greater than 0.")
 
         temperature_value = self.temperature if temperature is None else float(temperature)
         if decoding_value == "greedy":
@@ -473,7 +479,7 @@ class JobManager:
             if temperature_value is None:
                 temperature_value = 1.0
             if temperature_value <= 0:
-                raise ValueError("temperature must be greater than 0.")
+                raise JobManagerError("invalid_temperature", "temperature must be greater than 0.")
 
         return {
             "prompt": prompt_value,

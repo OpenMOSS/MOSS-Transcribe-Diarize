@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Iterable
 
+from .layout import assign_overlap_lanes
 from .models import SubtitleSegment, SubtitleStyle
 
 
@@ -61,13 +62,16 @@ def export_ass(
             color = SPEAKER_COLORS[index % len(SPEAKER_COLORS)]
             style_lines.append(_ass_style_line(_speaker_style_name(speaker), style, font_size, color))
 
+    lanes = assign_overlap_lanes(segments)
+    lane_step = max(1, font_size)
     dialogue_lines = []
-    for segment in segments:
+    for segment, lane in zip(segments, lanes, strict=True):
         style_name = _speaker_style_name(segment.speaker) if style.speaker_colors else "Default"
         text = _ass_escape(_display_text(segment, show_speaker=style.show_speaker, speaker_names=style.speaker_names))
+        margin_v = style.margin_v + lane * lane_step
         dialogue_lines.append(
             f"Dialogue: 0,{format_ass_time(segment.start)},{format_ass_time(segment.end)},"
-            f"{style_name},,0,0,0,,{text}"
+            f"{style_name},,0,0,{margin_v},,{text}"
         )
 
     return "\n".join(
