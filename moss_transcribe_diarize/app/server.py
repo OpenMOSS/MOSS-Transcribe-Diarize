@@ -705,13 +705,9 @@ INDEX_HTML = """<!doctype html>
     }
     .subtitle-overlay {
       position: absolute;
-      left: 50%;
-      bottom: 56px;
-      width: max-content;
+      inset: 0;
       max-width: none;
-      transform: translateX(-50%);
       display: none;
-      justify-content: center;
       pointer-events: none;
       text-align: center;
       color: white;
@@ -726,7 +722,20 @@ INDEX_HTML = """<!doctype html>
       paint-order: stroke fill;
       text-shadow: 0 2px 3px rgba(0, 0, 0, 0.65);
     }
-    .subtitle-overlay.visible { display: flex; }
+    .subtitle-overlay.visible { display: block; }
+    .subtitle-line {
+      position: absolute;
+      left: 50%;
+      width: max-content;
+      max-width: none;
+      transform: translateX(-50%);
+      color: inherit;
+      -webkit-text-fill-color: currentColor;
+      -webkit-text-stroke: inherit;
+      paint-order: inherit;
+      text-shadow: inherit;
+      white-space: inherit;
+    }
     .table-wrap {
       overflow: auto;
       min-width: 0;
@@ -762,7 +771,10 @@ INDEX_HTML = """<!doctype html>
       font-weight: 650;
       text-align: left;
     }
-    .subtitle-table th.time { width: 76px; }
+    .subtitle-table th.time {
+      width: 92px;
+      text-align: right;
+    }
     .subtitle-table th.speaker { width: 68px; }
     .subtitle-table tbody tr {
       cursor: pointer;
@@ -771,6 +783,7 @@ INDEX_HTML = """<!doctype html>
     }
     .subtitle-table tbody tr:nth-child(even) { background: #fcfbf8; }
     .subtitle-table tbody tr:hover { background: #f4f1ea; }
+    .subtitle-table tbody tr.overlap { background: #edf7f4; }
     .subtitle-table tbody tr.active { background: #e1f1ee; }
     .subtitle-table tbody tr.active td {
       border-bottom-color: #a8d0ca;
@@ -1096,11 +1109,14 @@ let rerunDraftJob = null;
 let pollTimer = null;
 let ffmpegAvailable = false;
 let activeSegmentIndex = -1;
+let activeSegmentIndexesKey = null;
 let assPlayRes = { x: 1920, y: 1080 };
 let layoutFitFrame = 0;
 let editorDirty = false;
 let saveStatusTimer = 0;
 let speakerNameMap = {};
+let previewSyncRequest = null;
+let previewSyncRequestKind = null;
 const assFontLineHeightFactor = 1.448;
 const speakerPalette = ['#ffffff', '#ffe75b', '#8ff286', '#ffa7bb', '#ffd700', '#6bb5ff', '#db8eff', '#d8d8d8'];
 
@@ -1240,6 +1256,7 @@ fileInput.addEventListener('change', () => {
   if (rerunDraftJob) resetImportMode();
   const file = fileInput.files[0];
   if (file) {
+    stopPreviewSync();
     preview.src = URL.createObjectURL(file);
     resetVideoStage();
   }
@@ -1305,6 +1322,15 @@ rerunBtn.addEventListener('click', () => {
 
 preview.addEventListener('timeupdate', syncActiveSegment);
 preview.addEventListener('seeked', syncActiveSegment);
+preview.addEventListener('play', schedulePreviewSync);
+preview.addEventListener('pause', () => {
+  stopPreviewSync();
+  syncActiveSegment();
+});
+preview.addEventListener('ended', () => {
+  stopPreviewSync();
+  syncActiveSegment();
+});
 preview.addEventListener('loadedmetadata', () => {
   fitVideoStageToMedia();
   syncActiveSegment();
@@ -1324,10 +1350,15 @@ tbody.addEventListener('input', (event) => {
     const tr = event.target.closest('tr');
     resizeSegmentTextarea(event.target, tr && tr.classList.contains('active'));
   }
-  if (event.target.classList.contains('start') || event.target.classList.contains('end')) syncActiveSegment();
+  if (event.target.classList.contains('start') || event.target.classList.contains('end')) {
+    syncActiveSegment(undefined, true);
+  }
   else {
     if (event.target.classList.contains('speaker')) renderSpeakerMap(collectSegments());
-    updateSubtitlePreview();
+    const tr = event.target.closest('tr');
+    const rowIndex = tr ? Number(tr.dataset.index) : -1;
+    const segments = collectSegments();
+    updateSubtitlePreview(segments, rowIndex === activeSegmentIndex ? [rowIndex] : undefined);
   }
 });
 tbody.addEventListener('change', markEditorDirty);
@@ -1339,9 +1370,10 @@ speakerMapEl.addEventListener('input', () => {
 tbody.addEventListener('focusin', (event) => {
   const tr = event.target.closest('tr');
   if (!tr) return;
-  setActiveSegment(Number(tr.dataset.index), false);
+  const rowIndex = Number(tr.dataset.index);
+  setActiveSegment(rowIndex, false, [rowIndex]);
   resizeSegmentRow(tr, true);
-  updateSubtitlePreview();
+  updateSubtitlePreview(collectSegments(), [rowIndex]);
 });
 for (const id of ['fontSize', 'marginV', 'showSpeaker', 'speakerColors']) {
   document.querySelector('#' + id).addEventListener('input', () => {
@@ -1471,6 +1503,7 @@ async function showEditor(job, options = {}) {
   setVisible(workbench);
   const mediaUrl = apiUrl(`api/jobs/${job.id}/media`);
   if (preview.dataset.jobId !== job.id) {
+    stopPreviewSync();
     preview.dataset.jobId = job.id;
     preview.src = mediaUrl;
     resetVideoStage();
@@ -1577,6 +1610,7 @@ async function deleteJob(jobId) {
   if (!res.ok) return;
   if (currentJob && currentJob.id === jobId) {
     currentJob = null;
+    stopPreviewSync();
     preview.removeAttribute('src');
     preview.removeAttribute('data-job-id');
     preview.load();
@@ -1708,6 +1742,7 @@ function speakerDisplayName(speaker) {
 function renderSegments(segments) {
   tbody.innerHTML = '';
   activeSegmentIndex = -1;
+  activeSegmentIndexesKey = null;
   for (const [index, segment] of segments.entries()) {
     const tr = document.createElement('tr');
     tr.dataset.id = segment.id;
@@ -1723,8 +1758,10 @@ function renderSegments(segments) {
       const rowIndex = Number(tr.dataset.index);
       const start = Number(tr.querySelector('.start').value);
       if (Number.isFinite(start)) preview.currentTime = Math.max(0, start);
-      setActiveSegment(rowIndex, false);
-      updateSubtitlePreview();
+      const latestSegments = collectSegments();
+      const activeIndexes = activeSegmentIndexesAt(Number(preview.currentTime || 0), latestSegments);
+      setActiveSegment(rowIndex, false, activeIndexes.includes(rowIndex) ? activeIndexes : [rowIndex]);
+      updateSubtitlePreview(latestSegments, activeIndexes.includes(rowIndex) ? activeIndexes : [rowIndex]);
     });
     tbody.appendChild(tr);
     resizeSegmentRow(tr, false);
@@ -1789,27 +1826,105 @@ function assScriptScale() {
   return (videoStage.clientHeight || playResY) / playResY;
 }
 
-function syncActiveSegment() {
-  const time = Number(preview.currentTime || 0);
-  const segments = collectSegments();
-  const index = segments.findIndex((segment) => {
-    const start = Number(segment.start);
-    const end = Number(segment.end);
-    return Number.isFinite(start) && Number.isFinite(end) && start <= time && time <= end;
+function schedulePreviewSync() {
+  if (previewSyncRequest !== null || preview.paused || preview.ended) return;
+  if (typeof preview.requestVideoFrameCallback === 'function') {
+    previewSyncRequestKind = 'video';
+    previewSyncRequest = preview.requestVideoFrameCallback((_now, metadata) => {
+      previewSyncRequest = null;
+      previewSyncRequestKind = null;
+      const mediaTime = metadata && Number.isFinite(metadata.mediaTime) ? metadata.mediaTime : undefined;
+      syncActiveSegment(mediaTime);
+      schedulePreviewSync();
+    });
+    return;
+  }
+  previewSyncRequestKind = 'animation';
+  previewSyncRequest = requestAnimationFrame(() => {
+    previewSyncRequest = null;
+    previewSyncRequestKind = null;
+    syncActiveSegment();
+    schedulePreviewSync();
   });
-  setActiveSegment(index, true);
-  updateSubtitlePreview(segments);
 }
 
-function setActiveSegment(index, shouldScroll) {
-  if (index === activeSegmentIndex) return;
+function stopPreviewSync() {
+  if (previewSyncRequest === null) return;
+  if (previewSyncRequestKind === 'video' && typeof preview.cancelVideoFrameCallback === 'function') {
+    preview.cancelVideoFrameCallback(previewSyncRequest);
+  } else {
+    cancelAnimationFrame(previewSyncRequest);
+  }
+  previewSyncRequest = null;
+  previewSyncRequestKind = null;
+}
+
+function syncActiveSegment(timeOverride, forceRender = false) {
+  const time = Number.isFinite(timeOverride) ? timeOverride : Number(preview.currentTime || 0);
+  const segments = collectSegments();
+  const activeIndexes = activeSegmentIndexesAt(time, segments);
+  const index = activeIndexes.length ? activeIndexes[0] : -1;
+  const activeSetChanged = setActiveSegment(index, true, activeIndexes);
+  if (activeSetChanged || forceRender) updateSubtitlePreview(segments, activeIndexes);
+}
+
+function setActiveSegment(index, shouldScroll, activeIndexes) {
+  const normalizedIndexes = activeIndexes || (index >= 0 ? [index] : []);
+  const nextIndexesKey = normalizedIndexes.join(',');
+  if (index === activeSegmentIndex && nextIndexesKey === activeSegmentIndexesKey) return false;
+  const activeSet = new Set(normalizedIndexes);
   activeSegmentIndex = index;
+  activeSegmentIndexesKey = nextIndexesKey;
   for (const tr of tbody.querySelectorAll('tr')) {
-    const active = Number(tr.dataset.index) === index;
+    const rowIndex = Number(tr.dataset.index);
+    const active = rowIndex === index;
+    const overlap = activeSet.has(rowIndex);
     tr.classList.toggle('active', active);
+    tr.classList.toggle('overlap', overlap && !active);
     resizeSegmentRow(tr, active);
     if (active && shouldScroll) scrollSegmentRowIntoView(tr);
   }
+  return true;
+}
+
+function activeSegmentIndexesAt(time, segments) {
+  const indexes = [];
+  for (const [index, segment] of segments.entries()) {
+    if (segmentContainsTime(segment, time)) indexes.push(index);
+  }
+  return indexes;
+}
+
+function segmentContainsTime(segment, time) {
+  const start = Number(segment.start);
+  const end = Number(segment.end);
+  return Number.isFinite(start) && Number.isFinite(end) && start <= time && time < end;
+}
+
+function assignOverlapLanes(segments) {
+  const lanes = new Array(segments.length).fill(0);
+  const laneEnds = [];
+  const indexed = segments.map((segment, index) => ({ segment, index })).sort((a, b) => {
+    const startDiff = Number(a.segment.start) - Number(b.segment.start);
+    if (startDiff) return startDiff;
+    const endDiff = Number(a.segment.end) - Number(b.segment.end);
+    if (endDiff) return endDiff;
+    return a.index - b.index;
+  });
+
+  for (const item of indexed) {
+    const start = Number(item.segment.start);
+    const end = Math.max(start, Number(item.segment.end));
+    let lane = laneEnds.findIndex((laneEnd) => laneEnd <= start);
+    if (lane < 0) {
+      lane = laneEnds.length;
+      laneEnds.push(end);
+    } else {
+      laneEnds[lane] = end;
+    }
+    lanes[item.index] = lane;
+  }
+  return lanes;
 }
 
 function scrollSegmentRowIntoView(tr) {
@@ -1827,29 +1942,42 @@ function scrollSegmentRowIntoView(tr) {
   }
 }
 
-function updateSubtitlePreview(segments) {
+function updateSubtitlePreview(segments, activeIndexes) {
   segments = segments || collectSegments();
-  const segment = segments[activeSegmentIndex];
-  if (!segment || !segment.text || activeSegmentIndex < 0) {
+  activeIndexes = activeIndexes || activeSegmentIndexesAt(Number(preview.currentTime || 0), segments);
+  const visibleIndexes = activeIndexes.filter((index) => segments[index] && segments[index].text);
+  if (!visibleIndexes.length) {
     subtitleOverlay.classList.remove('visible');
-    subtitleOverlay.textContent = '';
+    subtitleOverlay.replaceChildren();
     return;
   }
   const showSpeaker = document.querySelector('#showSpeaker').value === 'true';
   const useSpeakerColors = document.querySelector('#speakerColors').value === 'true';
   const fontSize = Math.max(12, Number(document.querySelector('#fontSize').value || 48));
   const marginV = Math.max(0, Number(document.querySelector('#marginV').value || 56));
-  const text = showSpeaker && segment.speaker ? speakerDisplayName(segment.speaker) + ': ' + segment.text : segment.text;
   const scale = assScriptScale();
-  subtitleOverlay.textContent = text;
   subtitleOverlay.style.fontSize = Math.max(10, fontSize * scale / assFontLineHeightFactor) + 'px';
   subtitleOverlay.style.lineHeight = String(assFontLineHeightFactor);
-  subtitleOverlay.style.bottom = Math.max(0, marginV * scale) + 'px';
   subtitleOverlay.style.webkitTextStroke = subtitleTextStroke(scale);
   subtitleOverlay.style.textShadow = subtitleTextShadow(scale);
-  const color = useSpeakerColors ? speakerColor(segment.speaker, segments) : '#ffffff';
-  subtitleOverlay.style.color = color;
-  subtitleOverlay.style.webkitTextFillColor = color;
+  subtitleOverlay.replaceChildren();
+  const lanes = assignOverlapLanes(segments);
+  const laneStep = Math.max(1, fontSize) * scale;
+  const baseMargin = Math.max(0, marginV * scale);
+  visibleIndexes
+    .sort((left, right) => lanes[left] - lanes[right] || Number(segments[left].start) - Number(segments[right].start) || left - right)
+    .forEach((index) => {
+      const segment = segments[index];
+      const line = document.createElement('div');
+      line.className = 'subtitle-line';
+      line.textContent = showSpeaker && segment.speaker ? speakerDisplayName(segment.speaker) + ': ' + segment.text : segment.text;
+      const color = useSpeakerColors ? speakerColor(segment.speaker, segments) : '#ffffff';
+      line.style.color = color;
+      line.style.webkitTextFillColor = color;
+      line.style.bottom = baseMargin + lanes[index] * laneStep + 'px';
+      line.dataset.lane = String(lanes[index]);
+      subtitleOverlay.appendChild(line);
+    });
   subtitleOverlay.classList.add('visible');
 }
 
