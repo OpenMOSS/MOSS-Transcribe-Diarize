@@ -25,6 +25,7 @@ MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understandi
 
 ## News
 
+* 2026-07-22: The subtitle Web UI now supports both Simplified Chinese and English.
 * 2026-07-14: 🏆 MOSS-Transcribe-Diarize won first place in the 2nd MLC-SLM Challenge at INTERSPEECH 2026, covering 14 languages.
 * 2026-07-09: Open-sourced MOSS-Transcribe-Diarize 0.9B.
 

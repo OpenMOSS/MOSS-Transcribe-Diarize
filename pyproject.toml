@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "OpenMOSS Team" }]
 dependencies = [
-  "transformers>=5.0.0,<6.0.0",
+  "transformers>=5.6.0,<6.0.0",
   "safetensors>=0.6.2",
   "numpy>=1.26,<3",
   "av>=14.0",
