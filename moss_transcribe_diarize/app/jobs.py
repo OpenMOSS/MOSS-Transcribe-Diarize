@@ -322,9 +322,10 @@ class JobManager:
             raise JobManagerError("ffmpeg_unavailable", "ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
             raise JobManagerError("subtitles_unavailable", "No subtitle segments are available for this job.")
+        resolved_style = job.subtitle_style if style_payload is None else style_payload
         threading.Thread(
             target=self._render_job,
-            args=(job.id, SubtitleStyle.from_dict(style_payload)),
+            args=(job.id, SubtitleStyle.from_dict(resolved_style)),
             name=f"mtd-render-{job.id}",
             daemon=True,
         ).start()
