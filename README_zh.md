@@ -1,4 +1,4 @@
-# MOSS-Transcribe-Diarize
+# MOSS-Transcribe-Diarize 0.9B
 
 <br>
 
@@ -23,12 +23,12 @@
 
 MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型，面向长时、多说话人场景，支持语音转写、说话人分离（diarization）、时间戳标注以及声学事件感知。[MOSS-Transcribe-Diarize Pro](https://platform.mosi.cn/app/playground) 是性能更强的版本，整体表现更优，现已可通过在线 Playground 使用。
 
-MOSS-Transcribe-Diarize 支持 50+ 种语言。
+MOSS-Transcribe-Diarize 0.9B 支持 50+ 种语言。
 
 ## 最新动态
 
 * 2026-07-22：字幕 Web 界面现已支持简体中文和英文。
-* 2026-07-14：🏆 MOSS-Transcribe-Diarize 在 INTERSPEECH 2026 第二届 MLC-SLM Challenge 中夺得第一名，覆盖 14 种语言。
+* 2026-07-14：🏆 MOSS-Transcribe-Diarize 在 INTERSPEECH 2026 [第二届 MLC-SLM Challenge](https://www.nexdata.ai/competition/mlc-slm) 中夺得第一名，覆盖 14 种语言。
 * 2026-07-09：开源 MOSS-Transcribe-Diarize 0.9B。
 
 ## 目录
