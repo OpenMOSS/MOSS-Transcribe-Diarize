@@ -3,7 +3,7 @@
 <br>
 
 <p align="center">
-  <img src="./assets/OpenMOSS_Logo.png" height="70" align="middle" />
+  <img src="./assets/OpenMOSS_Logo.svg" height="70" align="middle" />
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="./assets/mosi-logo.png" height="50" align="middle" />
 </p>
@@ -21,7 +21,9 @@
   <b>中文</b> | <a href="./README.md">English</a>
 </p>
 
-MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型，面向长时、多说话人场景，支持语音转写、说话人分离（diarization）、时间戳标注以及声学事件感知。MOSS-Transcribe-Diarize Pro 是性能更强的版本，整体表现更优，即将通过 API 方式开放使用。
+MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型，面向长时、多说话人场景，支持语音转写、说话人分离（diarization）、时间戳标注以及声学事件感知。[MOSS-Transcribe-Diarize Pro](https://platform.mosi.cn/app/playground) 是性能更强的版本，整体表现更优，现已可通过在线 Playground 使用。
+
+MOSS-Transcribe-Diarize 支持 50+ 种语言。
 
 ## 最新动态
 
@@ -50,8 +52,6 @@ MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型
 MOSS-Transcribe-Diarize 是我们的旗舰级 SOTA 模型系列，能够一次性将真实世界的长音频转换为结构化、带说话人标注的转写结果。它不再依赖将独立的 ASR 与说话人分离系统拼接起来的方案，而是联合完成语音转写与说话人分离，直接输出带精确时间戳、说话人标签（如 `[S01]`、`[S02]` 等）一致的时间对齐文本。
 
 MOSS-Transcribe-Diarize 面向会议、通话、播客、访谈、讲座和视频内容而设计，能够可靠地处理长时、嘈杂、多说话人的录音。它还可以选择性地输出声学事件标注，让下游系统更全面地理解“发生了什么、谁在说话、何时说话”。
-
-MOSS-Transcribe-Diarize 支持 50+ 种语言。
 
 模型接收原始音频，输出紧凑的带时间戳转写文本。标准输出格式为：
 
