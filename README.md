@@ -3,7 +3,7 @@
 <br>
 
 <p align="center">
-  <img src="./assets/OpenMOSS_Logo.svg" height="70" align="middle" />
+  <img src="./assets/OpenMOSS_Logo.png" height="70" align="middle" />
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="./assets/mosi-logo.png" height="50" align="middle" />
 </p>
@@ -21,9 +21,7 @@
   <b>English</b> | <a href="./README_zh.md">中文</a>
 </p>
 
-MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness. [MOSS-Transcribe-Diarize Pro](https://platform.mosi.cn/app/playground) is a stronger model with higher overall performance and is available through the online playground.
-
-MOSS-Transcribe-Diarize supports 50+ languages.
+MOSS-Transcribe-Diarize 0.9B is an open-source SOTA end-to-end audio understanding model for long-form multi-speaker transcription, diarization, timestamps, and acoustic event awareness. MOSS-Transcribe-Diarize Pro is a stronger model with higher overall performance and will be available through API access soon.
 
 ## News
 
@@ -52,6 +50,8 @@ MOSS-Transcribe-Diarize supports 50+ languages.
 MOSS-Transcribe-Diarize is our flagship SOTA model family for turning real-world long-form audio into structured, speaker-aware transcripts in one pass. Instead of stitching together separate ASR and diarization systems, these models jointly perform speech transcription and speaker diarization, producing time-aligned text with precise timestamps and consistent speaker labels such as `[S01]`, `[S02]`, and beyond.
 
 Built for meetings, calls, podcasts, interviews, lectures, and video content, MOSS-Transcribe-Diarize is designed to handle long, messy, multi-speaker recordings where reliability matters. It can also emit optional acoustic event annotations, giving downstream systems a richer understanding of what happened, who spoke, and when.
+
+MOSS-Transcribe-Diarize supports 50+ languages.
 
 The model accepts raw audio and emits a compact timestamped transcript. The canonical output format is:
 
