@@ -412,8 +412,10 @@ mtd-subtitle /path/to/input.mp4 \
 
 ## Star 趋势
 
-<p align="center">
-  <a href="https://www.star-history.com/#OpenMOSS/MOSS-Transcribe-Diarize&amp;Date">
-    <img width="700" alt="Star History Chart" src="https://api.star-history.com/svg?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&amp;type=Date">
-  </a>
-</p>
+<a href="https://www.star-history.com/?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&theme=dark&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
+ </picture>
+</a>
