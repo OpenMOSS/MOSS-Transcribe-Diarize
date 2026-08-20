@@ -413,10 +413,10 @@ If you use MOSS-Transcribe-Diarize, please cite the technical report:
 
 ## Star History
 
-<a href="https://www.star-history.com/?type=date&repos=OpenMOSS%2FMOSS-Transcribe-Diarize">
+<a href="https://www.star-history.com/?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&theme=dark&legend=top-left&sealed_token=Il8QLPD_5o0tps1zgTe1M-lkjb5mdSSINKxV0Dyp1nSc4afmHK0WBqJ02wxe0gXWTBhOwjvUwCn37qbCf1qexm0U1nGmYuY8PDb7XXBJBuynMc_I1QB71w-4QzwfsFgFojRyStdroH1Agu4ISBD5ct1_X5ISNNk5dCu-0NM3OTZ41mqMPjq5Hn0kB6zY" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=Il8QLPD_5o0tps1zgTe1M-lkjb5mdSSINKxV0Dyp1nSc4afmHK0WBqJ02wxe0gXWTBhOwjvUwCn37qbCf1qexm0U1nGmYuY8PDb7XXBJBuynMc_I1QB71w-4QzwfsFgFojRyStdroH1Agu4ISBD5ct1_X5ISNNk5dCu-0NM3OTZ41mqMPjq5Hn0kB6zY" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=Il8QLPD_5o0tps1zgTe1M-lkjb5mdSSINKxV0Dyp1nSc4afmHK0WBqJ02wxe0gXWTBhOwjvUwCn37qbCf1qexm0U1nGmYuY8PDb7XXBJBuynMc_I1QB71w-4QzwfsFgFojRyStdroH1Agu4ISBD5ct1_X5ISNNk5dCu-0NM3OTZ41mqMPjq5Hn0kB6zY" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&theme=dark&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
  </picture>
 </a>
