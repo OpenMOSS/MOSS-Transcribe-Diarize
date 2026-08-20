@@ -414,8 +414,8 @@ mtd-subtitle /path/to/input.mp4 \
 
 <a href="https://www.star-history.com/?repos=OpenMOSS%2FMOSS-Transcribe-Diarize&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&theme=dark&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left&sealed_token=gzlIUmakA9VgIsTR3LG-GQ6DQjmB5sm0rxv6gMjmYUkbn34mMTakjBQxLX2AkOx4Sfb8bA9dlJvB6p94023AsZ0cF8tUvFEU4oiliot5iO-EQGsipjgLtQ" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OpenMOSS/MOSS-Transcribe-Diarize&type=date&legend=top-left" />
  </picture>
 </a>
