@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import time
 from pathlib import Path
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+from moss_transcribe_diarize.attention import ATTENTION_IMPLEMENTATIONS, AUTO_ATTENTION_IMPLEMENTATION
 from moss_transcribe_diarize.subtitle import (
     export_ass,
     export_json,
@@ -36,6 +38,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--dtype", default="bf16")
+    parser.add_argument(
+        "--attn-implementation",
+        choices=[AUTO_ATTENTION_IMPLEMENTATION, *ATTENTION_IMPLEMENTATIONS],
+        default=AUTO_ATTENTION_IMPLEMENTATION,
+        help="Attention implementation priority selector for the HF backend.",
+    )
     parser.add_argument("--max-new-tokens", type=int, default=2048)
     parser.add_argument("--max-len", type=int, default=131072)
     parser.add_argument("--decoding", choices=["greedy", "sample"], default="greedy")
@@ -45,6 +53,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     args = parse_args()
     input_path = Path(args.input).expanduser()
     out_dir = Path(args.out_dir or f"runs/cli_{time.strftime('%Y%m%d_%H%M%S')}").expanduser()
@@ -60,7 +69,12 @@ def main() -> None:
             timeout=args.vllm_timeout,
         )
     else:
-        runner = ModelRunner(args.model, device=args.device, dtype=args.dtype)
+        runner = ModelRunner(
+            args.model,
+            device=args.device,
+            dtype=args.dtype,
+            attention_implementation=args.attn_implementation,
+        )
     result = runner.transcribe(
         input_path,
         prompt=args.prompt,

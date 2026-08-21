@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+from moss_transcribe_diarize.attention import AUTO_ATTENTION_IMPLEMENTATION
 
 from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager, JobManagerError
@@ -32,6 +33,7 @@ def create_app(
     runs_dir: str | Path = "runs",
     device: str = "auto",
     dtype: str = "bf16",
+    attention_implementation: str = AUTO_ATTENTION_IMPLEMENTATION,
     prompt: str = DEFAULT_PROMPT,
     max_length: int = 131072,
     max_new_tokens: int = 2048,
@@ -62,7 +64,12 @@ def create_app(
             timeout=vllm_timeout,
         )
     else:
-        runner = ModelRunner(model_path, device=device, dtype=dtype)
+        runner = ModelRunner(
+            model_path,
+            device=device,
+            dtype=dtype,
+            attention_implementation=attention_implementation,
+        )
     manager = JobManager(
         runs_dir,
         runner,

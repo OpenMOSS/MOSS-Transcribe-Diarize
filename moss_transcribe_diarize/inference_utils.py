@@ -9,6 +9,8 @@ import torch
 from transformers.audio_utils import load_audio
 from transformers.generation.streamers import BaseStreamer
 
+from .attention import attention_execution_context
+
 
 DEFAULT_PROMPT = (
     "请将音频转写为文本，每一段需以起始时间戳和说话人编号"
@@ -184,6 +186,7 @@ def generate_transcription(
     dtype: torch.dtype | None = None,
     input_callback: Callable[[int], None] | None = None,
     token_callback: TokenCallback | None = None,
+    attention_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     device = device or next(model.parameters()).device
     dtype = dtype or next(model.parameters()).dtype
@@ -220,18 +223,19 @@ def generate_transcription(
     if streamer is not None:
         generate_kwargs["streamer"] = streamer
 
-    with torch.inference_mode(), (
-        torch.amp.autocast("cuda", dtype=dtype)
-        if device.type == "cuda" and dtype in (torch.float16, torch.bfloat16)
-        else torch.no_grad()
-    ):
-        try:
-            outputs = model.generate(**generate_kwargs)
-        except TypeError as exc:
-            if streamer is None or "streamer" not in str(exc):
-                raise
-            generate_kwargs.pop("streamer", None)
-            outputs = model.generate(**generate_kwargs)
+    with attention_execution_context(attention_report):
+        with torch.inference_mode(), (
+            torch.amp.autocast("cuda", dtype=dtype)
+            if device.type == "cuda" and dtype in (torch.float16, torch.bfloat16)
+            else torch.no_grad()
+        ):
+            try:
+                outputs = model.generate(**generate_kwargs)
+            except TypeError as exc:
+                if streamer is None or "streamer" not in str(exc):
+                    raise
+                generate_kwargs.pop("streamer", None)
+                outputs = model.generate(**generate_kwargs)
 
     generated_ids = outputs[0][prompt_len:]
     text = processor.tokenizer.decode(generated_ids, skip_special_tokens=True).strip()

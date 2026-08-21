@@ -183,15 +183,19 @@ uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ### Python 用法
 
 ```python
+import logging
 import torch
-from transformers import AutoModelForCausalLM, AutoProcessor
+from transformers import AutoProcessor
 
 from moss_transcribe_diarize import parse_transcript
+from moss_transcribe_diarize.attention import load_model_with_attention_fallback
 from moss_transcribe_diarize.inference_utils import (
     build_transcription_messages,
     generate_transcription,
     resolve_device,
 )
+
+logging.basicConfig(level=logging.INFO)
 
 model_id = "OpenMOSS-Team/MOSS-Transcribe-Diarize"
 audio_path = "audio.wav"
@@ -199,11 +203,12 @@ audio_path = "audio.wav"
 device = resolve_device("auto")
 dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
 
-model = AutoModelForCausalLM.from_pretrained(
+model, attention_report = load_model_with_attention_fallback(
     model_id,
-    trust_remote_code=True,
-    dtype="auto",
-).to(dtype=dtype).to(device).eval()
+    device=device,
+    dtype=dtype,
+)
+model = model.to(dtype=dtype).to(device).eval()
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
 messages = build_transcription_messages(audio_path)
@@ -215,6 +220,7 @@ result = generate_transcription(
     do_sample=False,
     device=device,
     dtype=dtype,
+    attention_report=attention_report,
 )
 
 print(result["text"])
@@ -229,6 +235,12 @@ for segment in parse_transcript(result["text"]):
 2. `process_audio_info(messages, sampling_rate)` 从同一份 messages 中加载音频波形。
 3. `processor(text=text, audio=audios)` 计算 Whisper 输入特征并展开音频占位符。
 4. `model.generate(...)` 生成带时间戳的转写与说话人分离文本。
+
+仓库的 Hugging Face 加载器使用显式的 attention 策略，不接受 Transformers 的静默回退：候选顺序为
+`flash_attention_4`、`flash_attention_3`、`flash_attention_2`、`sdpa`，最后才是 `eager`。
+不可用的候选和最终选择都会写入日志；如果最终落到 `eager`，会额外发出 warning，因为它会为长音频物化二次方大小的 attention 张量。
+`mtd-subtitle` 和 `mtd-subtitle-web` 可通过 `--attn-implementation` 覆盖默认的 `auto` 策略。
+对于 `sdpa`，加载器还会按模型实际的 GQA 形状探测 native kernel，并在每次生成时应用可用 kernel 的优先级。
 
 ### 使用 SGLang Omni 部署
 
