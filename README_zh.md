@@ -236,6 +236,14 @@ for segment in parse_transcript(result["text"]):
 3. `processor(text=text, audio=audios)` 计算 Whisper 输入特征并展开音频占位符。
 4. `model.generate(...)` 生成带时间戳的转写与说话人分离文本。
 
+除本地文件路径外，`build_transcription_messages` 也接受一维 `numpy.ndarray` 或 `torch.Tensor` 波形。波形应为单声道浮点采样，并使用 processor 配置的采样率：
+
+```python
+messages = build_transcription_messages(waveform, prompt="Transcribe and diarize this audio.")
+```
+
+该辅助函数会保留消息中的数组，并在交给 Transformers 音频 loader 前将 Tensor 转换为 NumPy。
+
 仓库的 Hugging Face 加载器使用显式的 attention 策略，不接受 Transformers 的静默回退：候选顺序为
 `flash_attention_4`、`flash_attention_3`、`flash_attention_2`、`sdpa`，最后才是 `eager`。
 不可用的候选和最终选择都会写入日志；如果最终落到 `eager`，会额外发出 warning，因为它会为长音频物化二次方大小的 attention 张量。

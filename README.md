@@ -236,6 +236,14 @@ The message flow follows the common Qwen multimodal pattern. The chat template i
 3. `processor(text=text, audio=audios)` computes Whisper input features and expands audio placeholders.
 4. `model.generate(...)` produces timestamped transcription and diarization text.
 
+`build_transcription_messages` also accepts a one-dimensional `numpy.ndarray` or `torch.Tensor` waveform, in addition to a local path. The waveform should be mono floating-point samples at the processor's configured sampling rate:
+
+```python
+messages = build_transcription_messages(waveform, prompt="Transcribe and diarize this audio.")
+```
+
+The helper preserves the array in the message and converts tensors to NumPy before handing them to the Transformers audio loader.
+
 The repository's Hugging Face loader uses an explicit attention policy instead of
 accepting a silent Transformers fallback: `flash_attention_4`, `flash_attention_3`,
 `flash_attention_2`, `sdpa`, then `eager`. Unavailable candidates and the selected
