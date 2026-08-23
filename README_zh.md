@@ -65,6 +65,8 @@ MOSS-Transcribe-Diarize 面向会议、通话、播客、访谈、讲座和视�
 [0.48][S01]Welcome everyone[1.66][12.26][S02]The new transcription pipeline is ready for evaluation[13.81][14.36][S01]Great, include the diarization results in the report[18.76]
 ```
 
+当后端返回的片段格式有效、但缺少说话人标签时，本地 `parse_transcript` 辅助函数会使用默认说话人 `S01`，而不是丢弃整段内容。此行为只影响本地解析，原始模型文本会保持不变；如果需要严格拒绝缺少标签的片段，可传入 `default_speaker=None`。
+
 ## 模型架构
 
 <p align="center">

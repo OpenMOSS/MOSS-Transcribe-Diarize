@@ -23,6 +23,10 @@ class TranscriptStreamParser:
 
         [start][Sxx]text[end]
 
+    If the model omits the speaker token, ``default_speaker`` is used so that
+    otherwise valid transcript text is not discarded. Pass ``None`` to keep
+    strict parsing and reject unlabelled segments.
+
     The parser deliberately avoids regular expressions. It scans characters
     once, keeps only the active token/text buffers, and emits a segment after
     an end timestamp is confirmed by the next segment start or by ``close()``.
@@ -36,9 +40,20 @@ class TranscriptStreamParser:
     _READ_END = 5
     _AFTER_END = 6
 
-    def __init__(self, *, strip_text: bool = True, skip_empty: bool = True):
+    def __init__(
+        self,
+        *,
+        strip_text: bool = True,
+        skip_empty: bool = True,
+        default_speaker: str | None = "S01",
+    ):
+        if default_speaker is not None and _parse_speaker(list(default_speaker)) is None:
+            raise TranscriptParseError(
+                f"default_speaker must look like [Sxx], got {default_speaker!r}"
+            )
         self.strip_text = strip_text
         self.skip_empty = skip_empty
+        self.default_speaker = default_speaker
         self._state = self._SEEK_START
         self._token: list[str] = []
         self._text: list[str] = []
@@ -127,6 +142,11 @@ class TranscriptStreamParser:
         if ch == "[":
             self._token.clear()
             self._state = self._READ_SPEAKER
+        elif not ch.isspace() and self.default_speaker is not None:
+            self._speaker = self.default_speaker
+            self._text.clear()
+            self._state = self._READ_TEXT
+            self._read_text(ch)
         elif not ch.isspace():
             self.reset()
 

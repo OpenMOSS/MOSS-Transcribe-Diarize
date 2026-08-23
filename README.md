@@ -65,6 +65,8 @@ Timestamps are expressed in seconds, and adjacent segments are concatenated into
 [0.48][S01]Welcome everyone[1.66][12.26][S02]The new transcription pipeline is ready for evaluation[13.81][14.36][S01]Great, include the diarization results in the report[18.76]
 ```
 
+When a backend returns an otherwise valid segment without a speaker token, the local `parse_transcript` helper assigns the default speaker `S01` instead of dropping the segment. This only affects local parsing; the raw model text is preserved unchanged. Pass `default_speaker=None` when strict rejection of unlabelled segments is required.
+
 ## Model Architecture
 
 <p align="center">
