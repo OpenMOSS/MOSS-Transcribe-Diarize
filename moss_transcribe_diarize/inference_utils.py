@@ -112,8 +112,10 @@ def load_audio_av(audio: str, sampling_rate: int) -> np.ndarray:
     return (np.concatenate(chunks).astype(np.float32) / 32768.0).astype(np.float32, copy=False)
 
 
-def load_audio_item(audio: str | np.ndarray, sampling_rate: int) -> np.ndarray:
+def load_audio_item(audio: str | np.ndarray | torch.Tensor, sampling_rate: int) -> np.ndarray:
     """Load audio with Transformers' loader, using PyAV for media containers."""
+    if torch.is_tensor(audio):
+        audio = audio.detach().cpu().numpy()
     if isinstance(audio, str) and _is_likely_video_path(audio):
         return load_audio_av(audio, sampling_rate=sampling_rate)
     try:
@@ -139,19 +141,31 @@ def process_audio_info(messages: list[dict[str, Any]], sampling_rate: int):
         for item in content:
             if item.get("type") != "audio":
                 continue
-            audio = item.get("audio") or item.get("audio_url") or item.get("url") or item.get("path")
+            # Do not use ``or`` here: NumPy arrays and tensors have no single
+            # truth value when they contain more than one sample.
+            audio = None
+            for key in ("audio", "audio_url", "url", "path"):
+                value = item.get(key)
+                if value is not None:
+                    audio = value
+                    break
             if audio is None:
                 raise ValueError("Audio content must include audio, audio_url, url, or path.")
             audios.append(load_audio_item(audio, sampling_rate=sampling_rate))
     return audios
 
 
-def build_transcription_messages(audio_path: str | Path, prompt: str = DEFAULT_PROMPT) -> list[dict[str, Any]]:
+def build_transcription_messages(
+    audio_path: str | Path | np.ndarray | torch.Tensor,
+    prompt: str = DEFAULT_PROMPT,
+) -> list[dict[str, Any]]:
+    """Build a chat message for a path or an in-memory mono waveform."""
+    audio = str(audio_path) if isinstance(audio_path, Path) else audio_path
     return [
         {
             "role": "user",
             "content": [
-                {"type": "audio", "audio": str(audio_path)},
+                {"type": "audio", "audio": audio},
                 {"type": "text", "text": prompt.strip() or DEFAULT_PROMPT},
             ],
         }
