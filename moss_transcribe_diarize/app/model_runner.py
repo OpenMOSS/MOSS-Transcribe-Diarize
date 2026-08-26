@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from dataclasses import dataclass
@@ -16,6 +17,42 @@ from moss_transcribe_diarize.inference_utils import (
     generate_transcription,
     resolve_device,
 )
+
+LOGGER = logging.getLogger(__name__)
+
+
+def _attention_candidates(device: torch.device) -> tuple[str, ...]:
+    """Attention backend priority: FlashAttention-2 > SDPA > eager."""
+    import importlib.util
+
+    if device.type == "cuda" and importlib.util.find_spec("flash_attn") is not None:
+        return ("flash_attention_2", "sdpa", "eager")
+    return ("sdpa", "eager")
+
+
+def _load_model(model_path: str, device: torch.device):
+    candidates = _attention_candidates(device)
+    for attn_implementation in candidates:
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                trust_remote_code=True,
+                dtype="auto",
+                attn_implementation=attn_implementation,
+            )
+            if attn_implementation == "eager":
+                LOGGER.warning(
+                    "Eager attention uses quadratic memory and can OOM on long audio; install flash-attn or use SDPA"
+                )
+            return model
+        except Exception:
+            if attn_implementation == candidates[-1]:
+                raise
+            LOGGER.warning(
+                "attn_implementation=%s failed; trying the next candidate",
+                attn_implementation,
+                exc_info=True,
+            )
 
 
 StatusCallback = Callable[[str, float | None, int | None], None]
@@ -114,7 +151,11 @@ class ModelRunner:
 
             def on_generated_tokens(generated_tokens: int) -> None:
                 if status_callback is not None:
-                    status_callback("transcribing", generation_progress(generated_tokens, max_new_tokens), generated_tokens)
+                    status_callback(
+                        "transcribing",
+                        generation_progress(generated_tokens, max_new_tokens),
+                        generated_tokens,
+                    )
 
             started = time.time()
             result = generate_transcription(
@@ -154,8 +195,10 @@ class ModelRunner:
         dtype = dtype_from_name(self.dtype_name)
         if device.type == "cpu":
             dtype = torch.float32
-        model = AutoModelForCausalLM.from_pretrained(self.model_path, trust_remote_code=True, dtype="auto")
-        processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True, fix_mistral_regex=True)
+        model = _load_model(self.model_path, device)
+        processor = AutoProcessor.from_pretrained(
+            self.model_path, trust_remote_code=True, fix_mistral_regex=True
+        )
         self._model = model.to(dtype=dtype).to(device).eval()
         self._processor = processor
         self._device = device

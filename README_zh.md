@@ -178,6 +178,12 @@ source .venv/bin/activate
 uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ```
 
+在 CUDA GPU 上可加装可选的 `flash-attn`，以获得更快的 attention kernel：
+
+```bash
+uv pip install flash-attn
+```
+
 微调说明请参阅 [FINETUNING.md](FINETUNING.md)。
 
 ### Python 用法
@@ -203,6 +209,7 @@ model = AutoModelForCausalLM.from_pretrained(
     model_id,
     trust_remote_code=True,
     dtype="auto",
+    attn_implementation="sdpa",  # 安装了 flash-attn 包则改用 "flash_attention_2"
 ).to(dtype=dtype).to(device).eval()
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
@@ -222,6 +229,8 @@ print(result["text"])
 for segment in parse_transcript(result["text"]):
     print(segment.start, segment.end, segment.speaker, segment.text)
 ```
+
+安装了 flash-attn 包时可将 `sdpa` 改为 `flash_attention_2`；`eager` 仅作最后兜底，长音频下会因平方级的显存占用而 OOM。CLI 和 Web App 里的加载器会自动按此优先级选择 backend。
 
 消息流程遵循常见的 Qwen 多模态范式。对话模板由 `AutoProcessor` 从模型侧加载：
 

@@ -178,6 +178,12 @@ source .venv/bin/activate
 uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ```
 
+On CUDA GPUs, the optional `flash-attn` package can be added for faster attention kernels:
+
+```bash
+uv pip install flash-attn
+```
+
 For fine-tuning, see [FINETUNING.md](FINETUNING.md).
 
 ### Python Usage
@@ -203,6 +209,7 @@ model = AutoModelForCausalLM.from_pretrained(
     model_id,
     trust_remote_code=True,
     dtype="auto",
+    attn_implementation="sdpa",  # or "flash_attention_2" with the flash-attn package installed
 ).to(dtype=dtype).to(device).eval()
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
@@ -222,6 +229,8 @@ print(result["text"])
 for segment in parse_transcript(result["text"]):
     print(segment.start, segment.end, segment.speaker, segment.text)
 ```
+
+Pass `flash_attention_2` instead of `sdpa` when the flash-attn package is installed; `eager` is only a last resort, because its memory use grows quadratically with audio length and OOMs on long recordings. The loader used by the CLI and web app picks the best available backend in this order automatically.
 
 The message flow follows the common Qwen multimodal pattern. The chat template is loaded from the model by `AutoProcessor`:
 
