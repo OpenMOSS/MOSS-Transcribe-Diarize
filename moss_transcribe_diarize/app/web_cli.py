@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import logging
 from pathlib import Path
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
-from moss_transcribe_diarize.attention import ATTENTION_IMPLEMENTATIONS, AUTO_ATTENTION_IMPLEMENTATION
 
 from .cli import DEFAULT_MODEL
 from .server import create_app
@@ -24,12 +22,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--port", type=int, default=7860)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--dtype", default="bf16")
-    parser.add_argument(
-        "--attn-implementation",
-        choices=[AUTO_ATTENTION_IMPLEMENTATION, *ATTENTION_IMPLEMENTATIONS],
-        default=AUTO_ATTENTION_IMPLEMENTATION,
-        help="Attention implementation priority selector for the HF backend.",
-    )
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--max-new-tokens", type=int, default=2048)
     parser.add_argument("--max-len", type=int, default=131072)
@@ -39,7 +31,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
         import uvicorn
     except ImportError as exc:
@@ -51,7 +42,6 @@ def main() -> None:
         runs_dir=Path(args.runs_dir).expanduser(),
         device=args.device,
         dtype=args.dtype,
-        attention_implementation=args.attn_implementation,
         prompt=args.prompt,
         max_length=args.max_len,
         max_new_tokens=args.max_new_tokens,

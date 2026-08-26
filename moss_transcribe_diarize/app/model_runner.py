@@ -7,13 +7,8 @@ from pathlib import Path
 from typing import Callable
 
 import torch
-from transformers import AutoProcessor
+from transformers import AutoModelForCausalLM, AutoProcessor
 
-from moss_transcribe_diarize.attention import (
-    AUTO_ATTENTION_IMPLEMENTATION,
-    load_model_with_attention_fallback,
-    normalize_attention_implementation,
-)
 from moss_transcribe_diarize.inference_utils import (
     DEFAULT_PROMPT,
     build_transcription_messages,
@@ -70,17 +65,14 @@ class ModelRunner:
         *,
         device: str = "auto",
         dtype: str = "bf16",
-        attention_implementation: str = AUTO_ATTENTION_IMPLEMENTATION,
     ):
         self.model_path = str(Path(model_path).expanduser())
         self.device_name = device
         self.dtype_name = dtype
-        self.attention_implementation = normalize_attention_implementation(attention_implementation)
         self._model = None
         self._processor = None
         self._device: torch.device | None = None
         self._dtype: torch.dtype | None = None
-        self._attention_report: dict | None = None
         self._lock = threading.Lock()
 
     @property
@@ -93,11 +85,6 @@ class ModelRunner:
             "path": self.model_path,
             "device": self.device_name,
             "dtype": self.dtype_name,
-            "attention": self._attention_report
-            or {
-                "requested": self.attention_implementation,
-                "selected": "unloaded",
-            },
         }
 
     def transcribe(
@@ -144,7 +131,6 @@ class ModelRunner:
                 dtype=self._dtype,
                 input_callback=on_inputs_ready,
                 token_callback=on_generated_tokens,
-                attention_report=self._attention_report,
             )
             if status_callback is not None:
                 status_callback("transcribing", 0.85, int(result["generated_tokens"]))
@@ -168,15 +154,9 @@ class ModelRunner:
         dtype = dtype_from_name(self.dtype_name)
         if device.type == "cpu":
             dtype = torch.float32
-        model, attention_report = load_model_with_attention_fallback(
-            self.model_path,
-            device=device,
-            dtype=dtype,
-            requested=self.attention_implementation,
-        )
+        model = AutoModelForCausalLM.from_pretrained(self.model_path, trust_remote_code=True, dtype="auto")
         processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True, fix_mistral_regex=True)
         self._model = model.to(dtype=dtype).to(device).eval()
         self._processor = processor
         self._device = device
         self._dtype = dtype
-        self._attention_report = attention_report

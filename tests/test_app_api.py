@@ -84,22 +84,6 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(model["path"], "moss-served")
             self.assertEqual(model["base_url"], "http://vllm.test:8000/v1")
 
-    def test_runtime_reports_hf_attention_policy_before_lazy_load(self):
-        from fastapi.testclient import TestClient
-        from moss_transcribe_diarize.app.server import create_app
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app = create_app(
-                model_path="unused-local-model",
-                runs_dir=tmpdir,
-                attention_implementation="eager",
-            )
-            runtime = TestClient(app).get("/api/runtime")
-            self.assertEqual(runtime.status_code, 200)
-            attention = runtime.json()["model"]["attention"]
-            self.assertEqual(attention["requested"], "eager")
-            self.assertEqual(attention["selected"], "unloaded")
-
     def test_job_lifecycle_and_missing_ffmpeg_render_error(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app

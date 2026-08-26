@@ -183,19 +183,15 @@ For fine-tuning, see [FINETUNING.md](FINETUNING.md).
 ### Python Usage
 
 ```python
-import logging
 import torch
-from transformers import AutoProcessor
+from transformers import AutoModelForCausalLM, AutoProcessor
 
 from moss_transcribe_diarize import parse_transcript
-from moss_transcribe_diarize.attention import load_model_with_attention_fallback
 from moss_transcribe_diarize.inference_utils import (
     build_transcription_messages,
     generate_transcription,
     resolve_device,
 )
-
-logging.basicConfig(level=logging.INFO)
 
 model_id = "OpenMOSS-Team/MOSS-Transcribe-Diarize"
 audio_path = "audio.wav"
@@ -203,12 +199,11 @@ audio_path = "audio.wav"
 device = resolve_device("auto")
 dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
 
-model, attention_report = load_model_with_attention_fallback(
+model = AutoModelForCausalLM.from_pretrained(
     model_id,
-    device=device,
-    dtype=dtype,
-)
-model = model.to(dtype=dtype).to(device).eval()
+    trust_remote_code=True,
+    dtype="auto",
+).to(dtype=dtype).to(device).eval()
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
 messages = build_transcription_messages(audio_path)
@@ -220,7 +215,6 @@ result = generate_transcription(
     do_sample=False,
     device=device,
     dtype=dtype,
-    attention_report=attention_report,
 )
 
 print(result["text"])
@@ -235,15 +229,6 @@ The message flow follows the common Qwen multimodal pattern. The chat template i
 2. `process_audio_info(messages, sampling_rate)` loads audio waveforms from the same messages.
 3. `processor(text=text, audio=audios)` computes Whisper input features and expands audio placeholders.
 4. `model.generate(...)` produces timestamped transcription and diarization text.
-
-The repository's Hugging Face loader uses an explicit attention policy instead of
-accepting a silent Transformers fallback: `flash_attention_4`, `flash_attention_3`,
-`flash_attention_2`, `sdpa`, then `eager`. Unavailable candidates and the selected
-implementation are logged. The final `eager` fallback emits a warning because it
-materializes quadratic attention tensors for long audio. Use
-`--attn-implementation` with `mtd-subtitle` or `mtd-subtitle-web` to override the
-`auto` policy. For `sdpa`, the loader probes the model's GQA shape and applies the
-available native kernel priority to each generation call.
 
 ### Serve with SGLang Omni
 
