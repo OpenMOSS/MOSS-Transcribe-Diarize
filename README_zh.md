@@ -42,6 +42,7 @@ MOSS-Transcribe-Diarize 0.9B 支持 50+ 种语言。
   - [Python 用法](#python-用法)
   - [使用 SGLang Omni 部署](#使用-sglang-omni-部署)
   - [使用 vLLM 部署](#使用-vllm-部署)
+  - [接入 FunASR 生态](#接入-funasr-生态)
   - [自定义 Prompt 与热词](#自定义-prompt-与热词)
   - [字幕 Web 应用](#字幕-web-应用)
 - [引用](#引用)
@@ -363,6 +364,17 @@ curl http://localhost:8000/v1/audio/transcriptions \
   -F response_format="json" \
   -F temperature="0"
 ```
+
+### 接入 FunASR 生态
+
+[FunASR](https://github.com/modelscope/FunASR) 为这个 OpenMOSS 第三方模型维护了面向生产的部署指南，覆盖 vLLM、SGLang Omni 与 Transformers。MOSS-Transcribe-Diarize 可在一次推理中同时生成转写、时间戳和说话人标签，因此应用侧无需再外挂独立的 VAD 或说话人分离模型。
+
+该指南固定了模型与服务端版本，分别说明各后端的响应契约，并提供了在 H100 上验证过的 vLLM 冒烟测试；同时明确哪些部署问题由 FunASR 生态承接，哪些模型或权重问题应在本仓库反馈：
+
+- [FunASR 部署指南](https://github.com/modelscope/FunASR/blob/main/docs/moss_transcribe_diarize_zh.md)
+- [FunASR 产品级部署页](https://www.funasr.com/deploy/moss-transcribe-diarize.html)
+
+MOSS-Transcribe-Diarize 仍是 OpenMOSS 基于 Apache-2.0 发布的模型；FunASR 提供的是生态部署入口，不代表模型归属发生变化。
 
 ### 自定义 Prompt 与热词
 
