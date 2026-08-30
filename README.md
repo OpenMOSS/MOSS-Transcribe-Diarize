@@ -373,6 +373,29 @@ and Transformers. Because MOSS-Transcribe-Diarize produces transcription,
 timestamps, and speaker labels in one pass, applications do not need to attach
 separate external VAD or speaker-diarization models.
 
+FunASR 1.4.8 or newer can normalize an existing vLLM service's official
+speaker-attributed response into the common `sentence_info` contract:
+
+```bash
+pip install "funasr>=1.4.8"
+```
+
+```python
+from funasr import AutoModel
+
+model = AutoModel(
+    model="OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    backend="vllm",
+    vllm_base_url="http://127.0.0.1:8898/v1",
+    vllm_model="moss-transcribe-diarize",
+    vllm_response_format="diarized_json",
+    disable_update=True,
+)
+result = model.generate("audio.wav", max_completion_tokens=8192)[0]
+for segment in result["sentence_info"]:
+    print(segment["start"], segment["end"], segment["spk"], segment["text"])
+```
+
 The guide pins the model and serving revisions, documents the response contract
 of each backend, and includes an H100-verified vLLM smoke test. It also explains
 the boundary between deployment issues handled in the FunASR ecosystem and
