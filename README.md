@@ -373,11 +373,11 @@ and Transformers. Because MOSS-Transcribe-Diarize produces transcription,
 timestamps, and speaker labels in one pass, applications do not need to attach
 separate external VAD or speaker-diarization models.
 
-FunASR 1.4.8 or newer can normalize an existing vLLM service's official
+FunASR 1.4.12 or newer can normalize an existing vLLM service's official
 speaker-attributed response into the common `sentence_info` contract:
 
 ```bash
-pip install "funasr>=1.4.8"
+pip install "funasr>=1.4.12"
 ```
 
 ```python
@@ -403,6 +403,7 @@ model or weight issues that belong in this repository:
 
 - [FunASR deployment guide](https://github.com/modelscope/FunASR/blob/main/docs/moss_transcribe_diarize.md)
 - [FunASR production deployment page](https://www.funasr.com/en/deploy/moss-transcribe-diarize.html)
+- [FunClip 2.2.1: speaker-aware SRT and per-speaker clip export](https://github.com/modelscope/FunClip/releases/tag/v2.2.1)
 
 MOSS-Transcribe-Diarize remains an OpenMOSS model under Apache-2.0; the FunASR
 integration is an ecosystem deployment path, not a transfer of model ownership.

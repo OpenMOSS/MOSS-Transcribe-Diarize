@@ -369,10 +369,10 @@ curl http://localhost:8000/v1/audio/transcriptions \
 
 [FunASR](https://github.com/modelscope/FunASR) 为这个 OpenMOSS 第三方模型维护了面向生产的部署指南，覆盖 vLLM、SGLang Omni 与 Transformers。MOSS-Transcribe-Diarize 可在一次推理中同时生成转写、时间戳和说话人标签，因此应用侧无需再外挂独立的 VAD 或说话人分离模型。
 
-FunASR 1.4.8 及以上版本可连接已有的 vLLM 服务，并将官方说话人分段响应统一为 `sentence_info`：
+FunASR 1.4.12 及以上版本可连接已有的 vLLM 服务，并将官方说话人分段响应统一为 `sentence_info`：
 
 ```bash
-pip install "funasr>=1.4.8"
+pip install "funasr>=1.4.12"
 ```
 
 ```python
@@ -395,6 +395,7 @@ for segment in result["sentence_info"]:
 
 - [FunASR 部署指南](https://github.com/modelscope/FunASR/blob/main/docs/moss_transcribe_diarize_zh.md)
 - [FunASR 产品级部署页](https://www.funasr.com/deploy/moss-transcribe-diarize.html)
+- [FunClip 2.2.1：说话人 SRT 与按说话人剪辑](https://github.com/modelscope/FunClip/releases/tag/v2.2.1)
 
 MOSS-Transcribe-Diarize 仍是 OpenMOSS 基于 Apache-2.0 发布的模型；FunASR 提供的是生态部署入口，不代表模型归属发生变化。
 
