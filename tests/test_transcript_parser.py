@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from moss_transcribe_diarize.transcript_parser import (
+    TranscriptParseError,
     TranscriptSegment,
     TranscriptStreamParser,
     iter_transcript_segments,
@@ -57,6 +58,35 @@ class TranscriptParserTest(unittest.TestCase):
             parse_transcript(text),
             [TranscriptSegment(0.0, 4.0, "S01", "第[2024]年，编号[001]继续")],
         )
+
+    def test_missing_speaker_uses_default_speaker(self):
+        text = "[0.0]單一說話者片段[2.0][2.0]下一段[3.0]"
+
+        self.assertEqual(
+            parse_transcript(text),
+            [
+                TranscriptSegment(0.0, 2.0, "S01", "單一說話者片段"),
+                TranscriptSegment(2.0, 3.0, "S01", "下一段"),
+            ],
+        )
+
+    def test_missing_speaker_can_be_parsed_from_arbitrary_chunks(self):
+        chunks = ["[0.0]hel", "lo[1.0]", "[1.0]world[2.0]"]
+
+        self.assertEqual(
+            list(iter_transcript_segments(chunks)),
+            [
+                TranscriptSegment(0.0, 1.0, "S01", "hello"),
+                TranscriptSegment(1.0, 2.0, "S01", "world"),
+            ],
+        )
+
+    def test_strict_mode_keeps_unlabelled_segments_ignored(self):
+        self.assertEqual(parse_transcript("[0]unlabelled[1]", default_speaker=None), [])
+
+    def test_default_speaker_must_be_valid(self):
+        with self.assertRaises(TranscriptParseError):
+            TranscriptStreamParser(default_speaker="speaker-1")
 
     def test_noise_before_first_segment_is_ignored(self):
         text = "noise [bad][0.1][S01]hello[0.9]"

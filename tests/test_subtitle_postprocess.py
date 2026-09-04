@@ -18,6 +18,20 @@ class SubtitlePostprocessTest(unittest.TestCase):
         self.assertEqual([segment.text for segment in segments], ["你好", "开始"])
         self.assertEqual(segments[0].id, "seg_0001")
 
+    def test_recovers_unlabelled_single_speaker_segments(self):
+        segments = subtitle_segments_from_transcript(
+            "[0.0]連續單一說話者內容[2.0][2.0]下一段[3.0]",
+            postprocess=False,
+        )
+
+        self.assertEqual(
+            [(segment.start, segment.end, segment.speaker, segment.text) for segment in segments],
+            [
+                (0.0, 2.0, "S01", "連續單一說話者內容"),
+                (2.0, 3.0, "S01", "下一段"),
+            ],
+        )
+
     def test_can_build_raw_subtitle_segments_without_postprocess(self):
         segments = subtitle_segments_from_transcript(
             "[0][S01]短[0.4][0.2][S01]重叠但保留[0.8]",
