@@ -64,9 +64,16 @@ def dtype_from_name(name: str) -> torch.dtype:
 
 def resolve_device(device: str) -> torch.device:
     if device == "auto":
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        if torch.cuda.is_available():
+            device = "cuda:0"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
     resolved = torch.device(device)
     if resolved.type == "cuda" and not torch.cuda.is_available():
+        return torch.device("cpu")
+    if resolved.type == "mps" and not torch.backends.mps.is_available():
         return torch.device("cpu")
     return resolved
 
@@ -159,7 +166,7 @@ def build_transcription_messages(audio_path: str | Path, prompt: str = DEFAULT_P
 def prepare_inputs(processor, messages, *, max_length: int = 131072, device: torch.device | None = None):
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     audios = process_audio_info(messages, sampling_rate=processor.feature_extractor.sampling_rate)
-    audio_kwargs = {"device": str(device)} if device is not None and device.type == "cuda" else {}
+    audio_kwargs = {"device": str(device)} if device is not None and device.type in ("cuda", "mps") else {}
     return processor(
         text=text,
         audio=audios,
@@ -188,7 +195,7 @@ def generate_transcription(
     device = device or next(model.parameters()).device
     dtype = dtype or next(model.parameters()).dtype
     context = (
-        torch.amp.autocast("cuda", dtype=dtype)
+        torch.amp.autocast(device.type, dtype=dtype)
         if device.type == "cuda" and dtype in (torch.float16, torch.bfloat16)
         else torch.no_grad()
     )
@@ -221,7 +228,7 @@ def generate_transcription(
         generate_kwargs["streamer"] = streamer
 
     with torch.inference_mode(), (
-        torch.amp.autocast("cuda", dtype=dtype)
+        torch.amp.autocast(device.type, dtype=dtype)
         if device.type == "cuda" and dtype in (torch.float16, torch.bfloat16)
         else torch.no_grad()
     ):
