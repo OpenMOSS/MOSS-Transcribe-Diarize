@@ -1,0 +1,58 @@
+# vLLM serving for MOSS-Transcribe-Diarize
+#
+# Build & run:
+#   docker compose up --build
+#
+# GPU (runtime env vars, not build args):
+#   GPUS=all docker compose up --build
+#   GPUS=1 docker compose up --build
+#   NVIDIA_VISIBLE_DEVICES=0,1 docker compose up --build
+#
+# Image tag:
+#   IMAGE_TAG=1.0.0 docker compose up --build
+#
+# Serve image with model baked in:
+#   docker compose --profile serve up --build
+
+services:
+  vllm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: ${IMAGE_NAME:-moss-td-vllm}:${IMAGE_TAG:-dev}
+    user: root
+    volumes:
+      - ${PWD}:/workspace
+      - ${HF_HOME:-${HOME}/.cache/huggingface}:/root/.cache/huggingface
+    working_dir: /workspace
+    ports:
+      - "8000:8000"
+    shm_size: "16gb"
+    environment:
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+    gpus: ${GPUS:-all}
+    stdin_open: true
+    tty: true
+
+  serve:
+    profiles: [serve]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: serve
+      additional_contexts:
+        models: ${HF_HOME:-${HOME}/.cache/huggingface}
+      args:
+        MODEL_REVISION: ${MODEL_REVISION:-e5118b411bf5a77d7a90c4941066bec93c967312}
+    image: ${SERVE_IMAGE:-moss-td-serve}:${IMAGE_TAG:-latest}
+    user: root
+    ports:
+      - "8000:8000"
+    shm_size: "16gb"
+    environment:
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+    gpus: ${GPUS:-all}
+    restart: unless-stopped
