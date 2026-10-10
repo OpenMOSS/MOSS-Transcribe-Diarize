@@ -25,8 +25,11 @@ MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型
 
 MOSS-Transcribe-Diarize 0.9B 支持 50+ 种语言。
 
+**从这里开始：** [本地运行](#快速开始) · [字幕 Web 应用](#字幕-web-应用) · [0.9B 模型下载](https://huggingface.co/OpenMOSS-Team/MOSS-Transcribe-Diarize) · [评测](#评测) · [微调指南](FINETUNING.md)
+
 ## 最新动态
 
+* 2026-10-10：发布 MOSS-Transcribe-Diarize 对应的官方输入法——[MOSS 输入法](https://mosmos.io/)。
 * 2026-07-22：字幕 Web 界面现已支持简体中文和英文。
 * 2026-07-14：🏆 MOSS-Transcribe-Diarize 在 INTERSPEECH 2026 [第二届 MLC-SLM Challenge](https://www.nexdata.ai/competition/mlc-slm) 中夺得第一名，覆盖 14 种语言。
 * 2026-07-09：开源 MOSS-Transcribe-Diarize 0.9B。
