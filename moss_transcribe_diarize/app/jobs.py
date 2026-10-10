@@ -159,6 +159,7 @@ class JobManager:
         self.temperature = temperature
         self._jobs: dict[str, JobRecord] = {}
         self._queue: queue.Queue[str] = queue.Queue()
+        self._state_lock = threading.RLock()
         self._render_lock = threading.Lock()
         self._progress_save_times: dict[str, float] = {}
         self._load_existing_jobs()
@@ -305,15 +306,21 @@ class JobManager:
         style_payload: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         job = self.get_job(job_id)
-        segments = coerce_subtitle_segments(payload)
-        style = SubtitleStyle.from_dict(style_payload) if style_payload is not None else None
-        if style is not None:
-            job.subtitle_style = style.to_dict()
-        self._write_subtitle_files(job, segments, style=style)
-        if job.status == "done":
-            self._set_status(job, "waiting_review", 0.95, error=None)
-        else:
-            self._touch(job, error=None)
+        with self._state_lock:
+            if job.status == "rendering":
+                raise JobManagerError(
+                    "job_running",
+                    "Cannot update subtitles while the job is rendering.",
+                )
+            segments = coerce_subtitle_segments(payload)
+            style = SubtitleStyle.from_dict(style_payload) if style_payload is not None else None
+            if style is not None:
+                job.subtitle_style = style.to_dict()
+            self._write_subtitle_files(job, segments, style=style)
+            if job.status == "done":
+                self._set_status(job, "waiting_review", 0.95, error=None)
+            else:
+                self._touch(job, error=None)
         return [segment.to_dict() for segment in segments]
 
     def render(self, job_id: str, style_payload: dict[str, Any] | None = None) -> JobRecord:
@@ -322,12 +329,25 @@ class JobManager:
             raise JobManagerError("ffmpeg_unavailable", "ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
             raise JobManagerError("subtitles_unavailable", "No subtitle segments are available for this job.")
-        threading.Thread(
+        style = SubtitleStyle.from_dict(style_payload)
+        thread = threading.Thread(
             target=self._render_job,
-            args=(job.id, SubtitleStyle.from_dict(style_payload)),
+            args=(job.id, style),
             name=f"mtd-render-{job.id}",
             daemon=True,
-        ).start()
+        )
+        with self._state_lock:
+            if job.status == "rendering":
+                raise JobManagerError("job_running", "This job is already rendering.")
+            previous_status = job.status
+            previous_progress = job.progress
+            previous_error = job.error
+            self._set_status(job, "rendering", 0.97, error=None)
+            try:
+                thread.start()
+            except Exception:
+                self._set_status(job, previous_status, previous_progress, error=previous_error)
+                raise
         return job
 
     def download_path(self, job_id: str, kind: str) -> Path:
@@ -362,7 +382,13 @@ class JobManager:
                 job = JobRecord.from_dict(data)
                 if not job.job_dir:
                     job.job_dir = str(path.parent)
-                if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
+                if job.status == "rendering" and self._has_complete_segments(job):
+                    job.status = "waiting_review"
+                    job.progress = 0.95
+                    job.error = "Rendering was interrupted by the previous server shutdown. You can retry rendering."
+                    job.updated_at = time.time()
+                    self._save_job(job)
+                elif job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
                     job.status = "failed"
                     job.progress = 1.0
                     job.error = "Interrupted by previous server shutdown."
@@ -371,6 +397,17 @@ class JobManager:
                 self._jobs[job.id] = job
             except Exception:
                 continue
+
+    @staticmethod
+    def _has_complete_segments(job: JobRecord) -> bool:
+        try:
+            payload = json.loads(job.segments_path.read_text(encoding="utf-8"))
+            if not isinstance(payload, list):
+                return False
+            coerce_subtitle_segments(payload)
+        except (OSError, TypeError, ValueError, KeyError, AttributeError):
+            return False
+        return True
 
     def _process_job(self, job: JobRecord) -> None:
         try:
@@ -408,7 +445,6 @@ class JobManager:
         job = self.get_job(job_id)
         with self._render_lock:
             try:
-                self._set_status(job, "rendering", 0.97, error=None)
                 segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
                 width, height = probe_video_size(job.input_path)
                 write_text(job.ass_path, export_ass(segments, style=style, video_width=width, video_height=height))
@@ -448,9 +484,10 @@ class JobManager:
         error: str | None = None,
         save: bool = True,
     ) -> None:
-        job.status = status
-        job.progress = max(0.0, min(1.0, progress))
-        self._touch(job, error=error, save=save)
+        with self._state_lock:
+            job.status = status
+            job.progress = max(0.0, min(1.0, progress))
+            self._touch(job, error=error, save=save)
 
     def _resolve_inference_options(
         self,
