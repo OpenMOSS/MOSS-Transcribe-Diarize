@@ -48,6 +48,7 @@ MOSS-Transcribe-Diarize 0.9B supports 50+ languages.
   - [Use in the FunASR Ecosystem](#use-in-the-funasr-ecosystem)
   - [Custom Prompt and Hotwords](#custom-prompt-and-hotwords)
   - [Subtitle Web App](#subtitle-web-app)
+  - [Realtime Meeting Transcription](#realtime-meeting-transcription)
 - [Citation](#citation)
 - [Star History](#star-history)
 
@@ -449,6 +450,25 @@ mtd-subtitle /path/to/input.mp4 \
   --out-dir runs/example \
   --render
 ```
+
+### Realtime Meeting Transcription
+
+`mtd-realtime` transcribes a meeting while it is happening. The browser captures the microphone and, optionally, the audio of the meeting you are watching; the service re-runs the model over a sliding window and commits the stable part of each result every few seconds.
+
+```bash
+pip install -e ".[realtime]"
+mtd-realtime --backend vllm --vllm-base-url http://127.0.0.1:8000 --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize
+```
+
+Open `http://127.0.0.1:7870`, pick an input, press Start. Committed text lands in the left column and keeps up with the speaker; the right column shows the still-changing tail of the most recent window. Speakers are numbered consistently for the whole session and can be renamed, or reassigned segment by segment. Finished sessions are listed under **Sessions** and export to Markdown, SRT, JSON, ASS or plain text, with a **Re-run this session** button that takes the recording through the model once more in file mode — the better option for a conversation the live pass handled badly.
+
+Three things to know before pointing it at anything:
+
+- **It binds `127.0.0.1` and has no authentication.** Binding to `0.0.0.0` exposes a meeting transcriber to the whole network segment; only do that on a network you trust.
+- **It records the meeting.** Audio lands in `runs/realtime/<session-id>/audio.wav`, which is sensitive. Pass `--no-record` to keep only the transcript.
+- **`--backend vllm` needs a vLLM or SGLang server already running** (see [Serve with vLLM](#serve-with-vllm)). Forgetting it is the most common way this fails, so `GET /api/runtime` reports whether the endpoint answers and the page says so on load. `--backend hf --model <path> --device cuda:0` runs the local model instead; that path needs torch and loads the weights into the service's own process.
+
+To try the interface without a GPU, `python scripts/realtime_dev_server.py` starts the service against a stub endpoint that really decodes the window audio it receives — the whole chain is real except for hearing what was said. `python scripts/realtime_client.py <file.wav>` pushes a recording through a running service from the terminal, which is how the service is verified without a microphone.
 
 ## Citation
 

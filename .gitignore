@@ -19,3 +19,6 @@ runs/
 *.pth
 *.onnx
 *.log
+
+# Local agent tooling: launch profiles and per-machine settings.
+.claude/

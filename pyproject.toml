@@ -28,6 +28,7 @@ dependencies = [
 [project.scripts]
 mtd-subtitle = "moss_transcribe_diarize.app.cli:main"
 mtd-subtitle-web = "moss_transcribe_diarize.app.web_cli:main"
+mtd-realtime = "moss_transcribe_diarize.app.realtime_cli:main"
 
 [project.optional-dependencies]
 torch-runtime = [
@@ -36,6 +37,15 @@ torch-runtime = [
 ]
 flash-attn = ["flash-attn"]
 dev = ["pytest"]
+# 跨窗口说话人一致所需的声纹嵌入，加服务端跑 WebSocket 要用的 websockets。
+# 前两个都不依赖 torch，且只在真正构造 OnnxCampplusEmbedder 时才被 import，所以
+# 不装它们也能 `import moss_transcribe_diarize.realtime`——说话人退化为模型给的
+# 窗口局部标签。只做离线声纹（不用实时服务）的人可以只装前两个。
+realtime = [
+  "onnxruntime",
+  "kaldi-native-fbank",
+  "websockets",
+]
 
 [tool.setuptools.packages.find]
 include = ["moss_transcribe_diarize*"]

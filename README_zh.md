@@ -48,6 +48,7 @@ MOSS-Transcribe-Diarize 0.9B 支持 50+ 种语言。
   - [接入 FunASR 生态](#接入-funasr-生态)
   - [自定义 Prompt 与热词](#自定义-prompt-与热词)
   - [字幕 Web 应用](#字幕-web-应用)
+  - [实时会议转写](#实时会议转写)
 - [引用](#引用)
 - [Star 趋势](#star-趋势)
 
@@ -440,6 +441,26 @@ mtd-subtitle /path/to/input.mp4 \
   --out-dir runs/example \
   --render
 ```
+
+### 实时会议转写
+
+`mtd-realtime` 边开会边出字。浏览器采集麦克风，可选地再采集正在播放的会议声音；服务端按滑动窗口反复推理，每隔几秒把结果里已经稳定的部分定稿。
+
+```bash
+pip install -e ".[realtime]"
+mtd-realtime --backend vllm --vllm-base-url http://127.0.0.1:8000 --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize
+```
+
+打开 `http://127.0.0.1:7870`，选好输入，点"开始"。定稿文字进左栏并跟着说话人往前走，右栏显示最近一个窗口里仍在变动的那截。说话人编号在整场会话内保持一致，可以改成真实姓名，也可以逐段改归属。开完的会话列在**历史会话**里，可导出 Markdown / SRT / JSON / ASS / TXT；还有"重跑本次会话"，会把整段录音再按文件模式跑一遍模型——直播那遍没转好的谈话，这一遍质量更好。
+
+上手前要知道的四件事：
+
+- **默认只绑 `127.0.0.1`，而且没有鉴权。** 绑到 `0.0.0.0` 等于把会议转写接口开放给整个网段，请只在可信网络里这么做。
+- **它会录下整场会议。** 音频落在 `runs/realtime/<session-id>/audio.wav`，属于敏感数据；加 `--no-record` 就只保留转写文本。
+- **`--backend vllm` 需要先有一个 vLLM 或 SGLang 服务在跑**（见[使用 vLLM 部署](#使用-vllm-部署)）。忘了起它是最常见的一次失误，所以 `GET /api/runtime` 会报告端点是否可达，页面加载时也会直接提示。
+- **实时进程不引入 torch。** `--backend vllm` 下服务与前端加起来不加载任何 torch 相关模块；只有 `--backend hf` 才会在本进程内加载权重。
+
+没有 GPU 也想看看界面长什么样：`python scripts/realtime_dev_server.py` 会起一个带桩端点的服务——桩端点会**真的**解码收到的窗口音频再回一段同形的文本，所以除了"听清说了什么"以外，整条链路都是真的。`python scripts/realtime_client.py <file.wav>` 则从终端把一段录音推给正在运行的服务，这是没有麦克风时验证服务的方式。
 
 ## 引用
 
