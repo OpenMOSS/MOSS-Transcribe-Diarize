@@ -207,7 +207,7 @@ model_id = "OpenMOSS-Team/MOSS-Transcribe-Diarize"
 audio_path = "audio.wav"
 
 device = resolve_device("auto")
-dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
+dtype = torch.bfloat16 if device.type in ("cuda", "mps") else torch.float32
 
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
