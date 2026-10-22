@@ -9,12 +9,8 @@ import torch
 from transformers.audio_utils import load_audio
 from transformers.generation.streamers import BaseStreamer
 
+from moss_transcribe_diarize.prompts import DEFAULT_PROMPT
 
-DEFAULT_PROMPT = (
-    "请将音频转写为文本，每一段需以起始时间戳和说话人编号"
-    "（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，"
-    "并在段末标注结束时间戳，以清晰标明该段语音范围。"
-)
 VIDEO_EXTENSIONS = {".mp4", ".m4v", ".mov", ".mkv", ".webm", ".avi", ".flv", ".wmv"}
 TokenCallback = Callable[[int], None]
 

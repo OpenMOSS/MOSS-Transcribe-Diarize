@@ -53,6 +53,43 @@ class LocaleCatalogTest(unittest.TestCase):
         for code in {*ERROR_STATUS_CODES, "invalid_segments"}:
             self.assertIn(f"errors.{code}", keys)
 
+    def test_realtime_frontend_uses_only_known_keys(self):
+        """实时页面用到的每个词条都必须在 en 里存在（zh-CN 由上面那条保证一致）。"""
+        english = self.catalogs["en"]
+        html = (STATIC_DIR / "realtime.html").read_text(encoding="utf-8")
+        script = "".join(
+            (STATIC_DIR / name).read_text(encoding="utf-8")
+            for name in ("realtime.js", "realtime_logic.js")
+        )
+        html_keys = set(re.findall(r'data-i18n(?:-[a-z-]+)?="([^"]+)"', html))
+        # 引号与边界写成 chr()/字符类，是为了这条正则里不出现任何转义序列。
+        quotes = '\'"'
+        # 直接抓带命名空间的字符串字面量，而不是抓 `t(...)` 的调用形状：词条也会经
+        # `notice(...)` 这类包装传进去，只认一种调用形状会漏掉一半。
+        script_keys = set(re.findall(
+            rf"[{quotes}]((?:realtime|errors|runtime)[.][A-Za-z0-9_.]+)[{quotes}]", script,
+        ))
+        fallback_keys = set(re.findall(
+            rf"localizedError[(][^)]*, [{quotes}]([^{quotes}]+)[{quotes}][)]", script,
+        ))
+        missing = (html_keys | script_keys | fallback_keys) - set(english)
+        self.assertFalse(missing, f"missing keys: {sorted(missing)}")
+
+    def test_the_realtime_namespace_exists_in_both_locales(self):
+        for locale, catalog in self.catalogs.items():
+            with self.subTest(locale=locale):
+                self.assertTrue([k for k in catalog if k.startswith("realtime.")])
+        realtime_en = {k for k in self.catalogs["en"] if k.startswith("realtime.")}
+        realtime_zh = {k for k in self.catalogs["zh-CN"] if k.startswith("realtime.")}
+        self.assertEqual(realtime_en, realtime_zh)
+
+    def test_the_realtime_frontend_is_served_and_references_real_assets(self):
+        html = (STATIC_DIR / "realtime.html").read_text(encoding="utf-8")
+        for asset in ("assets/realtime.js", "assets/realtime.css"):
+            self.assertIn(asset, html)
+            self.assertTrue((STATIC_DIR / asset.split("/", 1)[1]).is_file(), asset)
+        self.assertTrue((STATIC_DIR / "audio-worklet.js").is_file())
+
 
 @unittest.skipUnless(FASTAPI_AVAILABLE, "fastapi is not installed")
 class AppI18nApiTest(unittest.TestCase):
