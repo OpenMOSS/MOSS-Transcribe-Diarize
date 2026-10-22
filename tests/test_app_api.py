@@ -215,6 +215,151 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(finished["status"], "waiting_review")
             self.assertEqual(finished["usage"]["generated_tokens"], 5)
 
+    def test_rendering_job_rejects_subtitle_updates(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            app.state.manager.model_runner = FakeRunner()
+            client = TestClient(app)
+
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+            )
+            job_id = created.json()["id"]
+            for _ in range(40):
+                job = client.get(f"/api/jobs/{job_id}").json()
+                if job["status"] == "waiting_review":
+                    break
+                time.sleep(0.05)
+            self.assertEqual(job["status"], "waiting_review")
+
+            original = client.get(f"/api/jobs/{job_id}/segments").json()["segments"]
+            edited = [dict(item) for item in original]
+            edited[0]["text"] = "must not be saved"
+            app.state.manager._set_status(
+                app.state.manager.get_job(job_id), "rendering", 0.97, error=None
+            )
+
+            updated = client.put(
+                f"/api/jobs/{job_id}/segments",
+                json={"segments": edited},
+            )
+
+            self.assertEqual(updated.status_code, 409)
+            self.assertIn("while the job is rendering", updated.json()["detail"])
+            self.assertEqual(
+                client.get(f"/api/jobs/{job_id}/segments").json()["segments"],
+                original,
+            )
+            self.assertIn(
+                "const EDIT_STATES = new Set(['waiting_review', 'done']);",
+                client.get("/assets/app.js").text,
+            )
+
+    def test_duplicate_render_request_is_rejected_before_starting_worker(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            app.state.manager.model_runner = FakeRunner()
+            client = TestClient(app)
+
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+            )
+            job_id = created.json()["id"]
+            for _ in range(40):
+                job = client.get(f"/api/jobs/{job_id}").json()
+                if job["status"] == "waiting_review":
+                    break
+                time.sleep(0.05)
+            self.assertEqual(job["status"], "waiting_review")
+
+            class Available:
+                available = True
+
+            render_started = threading.Event()
+            release_render = threading.Event()
+
+            def block_render(*_args):
+                render_started.set()
+                release_render.wait(timeout=2)
+
+            with (
+                patch("moss_transcribe_diarize.app.jobs.detect_ffmpeg", return_value=Available()),
+                patch.object(app.state.manager, "_render_job", side_effect=block_render) as render_job,
+            ):
+                first = client.post(f"/api/jobs/{job_id}/render", json={"style": {}})
+                self.assertEqual(first.status_code, 200)
+                self.assertEqual(first.json()["status"], "rendering")
+                self.assertTrue(render_started.wait(timeout=2))
+
+                duplicate = client.post(f"/api/jobs/{job_id}/render", json={"style": {}})
+
+                self.assertEqual(duplicate.status_code, 409)
+                self.assertIn("already rendering", duplicate.json()["detail"])
+                self.assertEqual(render_job.call_count, 1)
+                release_render.set()
+
+    def test_restart_recovers_interrupted_render_for_review(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            app.state.manager.model_runner = FakeRunner()
+            client = TestClient(app)
+
+            job_ids = []
+            for name in ("rendering.wav", "transcribing.wav"):
+                created = client.post(
+                    "/api/jobs",
+                    files={"file": (name, b"audio", "audio/wav")},
+                )
+                job_ids.append(created.json()["id"])
+            for job_id in job_ids:
+                for _ in range(40):
+                    job = client.get(f"/api/jobs/{job_id}").json()
+                    if job["status"] == "waiting_review":
+                        break
+                    time.sleep(0.05)
+                self.assertEqual(job["status"], "waiting_review")
+
+            rendering_id, transcribing_id = job_ids
+            app.state.manager._set_status(
+                app.state.manager.get_job(rendering_id), "rendering", 0.97, error=None
+            )
+            app.state.manager._set_status(
+                app.state.manager.get_job(transcribing_id), "transcribing", 0.5, error=None
+            )
+
+            restarted = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=8)
+            restarted_client = TestClient(restarted)
+            recovered = restarted_client.get(f"/api/jobs/{rendering_id}").json()
+
+            self.assertEqual(recovered["status"], "waiting_review")
+            self.assertEqual(recovered["progress"], 0.95)
+            self.assertIn("interrupted", recovered["error"])
+            self.assertIn("retry rendering", recovered["error"])
+            segments = restarted_client.get(f"/api/jobs/{rendering_id}/segments").json()["segments"]
+            edited = [dict(item) for item in segments]
+            edited[0]["text"] = "editable after restart"
+            updated = restarted_client.put(
+                f"/api/jobs/{rendering_id}/segments",
+                json={"segments": edited},
+            )
+            self.assertEqual(updated.status_code, 200)
+
+            failed = restarted_client.get(f"/api/jobs/{transcribing_id}").json()
+            self.assertEqual(failed["status"], "failed")
+            self.assertEqual(failed["progress"], 1.0)
+            self.assertEqual(failed["error"], "Interrupted by previous server shutdown.")
+
 
 if __name__ == "__main__":
     unittest.main()
